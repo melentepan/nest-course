@@ -11,13 +11,12 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { UsersService } from '../modules/users/users.service';
+import { UsersService } from '../features/users/users.service';
 import { AuthGuard } from './guards/auth.guard';
 import {
   ApiBearerAuth,
   ApiConflictResponse,
   ApiCreatedResponse,
-  ApiForbiddenResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -61,8 +60,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Обновление access- и refresh-токенов' })
   @ApiOkResponse({ type: AuthTokensDto, description: 'Новая пара JWT-токенов' })
-  @ApiForbiddenResponse({
-    description: 'Refresh-токен недействителен или сессия завершена',
+  @ApiUnauthorizedResponse({
+    description: 'Refresh-токен недействителен, истёк или сессия завершена',
   })
   @Post('refresh')
   refresh(@Body() refreshTokenDto: RefreshTokenDto) {

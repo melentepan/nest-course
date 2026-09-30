@@ -1,13 +1,9 @@
-import { UsersService } from '../modules/users/users.service';
+import { UsersService } from '../features/users/users.service';
 import { JwtService } from '@nestjs/jwt';
-import {
-  ForbiddenException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
-import { User } from '../modules/users/entities/user.entity';
+import { User } from '../features/users/entities/user.entity';
 import { ConfigService } from '@nestjs/config';
 import { RegisterDto } from './dto/register.dto';
 import { JwtPayload } from '../common/interfaces/jwt.interface';
@@ -83,17 +79,28 @@ export class AuthService {
   }
 
   async refreshTokens(refreshToken: string) {
-    const payload = await this.jwtService.verifyAsync<JwtPayload>(
-      refreshToken,
-      {
-        secret: this.configService.getOrThrow('jwt.refresh.secret'),
-      },
-    );
+    const secret = this.configService.getOrThrow<string>('jwt.refresh.secret');
+    const invalidTokenMessage =
+      'Недействительный или просроченный refresh-токен';
+
+    let payload: JwtPayload;
+
+    try {
+      payload = await this.jwtService.verifyAsync<JwtPayload>(refreshToken, {
+        secret,
+      });
+    } catch {
+      throw new UnauthorizedException(invalidTokenMessage);
+    }
+
+    if (!Number.isInteger(payload.sub)) {
+      throw new UnauthorizedException(invalidTokenMessage);
+    }
 
     const user = await this.usersService.findByIdWithRefreshToken(payload.sub);
 
-    if (!user || !user.hashedRefreshToken) {
-      throw new ForbiddenException('Доступ запрещен: сессия не найдена');
+    if (!user?.hashedRefreshToken) {
+      throw new UnauthorizedException(invalidTokenMessage);
     }
 
     const digest = this.getRefreshTokenDigest(refreshToken);
@@ -101,7 +108,7 @@ export class AuthService {
     const isTokenValid = await bcrypt.compare(digest, user.hashedRefreshToken);
 
     if (!isTokenValid) {
-      throw new ForbiddenException('Доступ запрещен: недействительный токен');
+      throw new UnauthorizedException(invalidTokenMessage);
     }
 
     const tokens = await this.generateTokens(user);

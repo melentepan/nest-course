@@ -15,12 +15,14 @@ import { UsersService } from './users.service';
 // import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ParseIdPipe } from '../../common/pipes/parse-id.pipe';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { AuthGuard } from '../../auth/guards/auth.guard';
 import { PaginationQueryDto } from './dto/pagination-query.dto';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiConflictResponse,
+  ApiForbiddenResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -86,12 +88,14 @@ export class UsersController {
   @ApiBadRequestResponse({ description: 'ID или данные запроса некорректны' })
   @ApiNotFoundResponse({ description: 'Пользователь не найден' })
   @ApiConflictResponse({ description: 'Логин или email уже заняты' })
+  @ApiForbiddenResponse({ description: 'Нет доступа к этому аккаунту' })
   @Patch(':id')
   update(
     @Param('id', ParseIdPipe) id: number,
     @Body() updateUserDto: UpdateUserDto,
+    @CurrentUser('sub') actorId: number,
   ) {
-    return this.usersService.update(id, updateUserDto);
+    return this.usersService.update(id, updateUserDto, actorId);
   }
 
   @ApiOperation({
@@ -106,10 +110,14 @@ export class UsersController {
   @ApiNoContentResponse({ description: 'Пользователь мягко удалён' })
   @ApiBadRequestResponse({ description: 'ID должен быть числом' })
   @ApiNotFoundResponse({ description: 'Пользователь не найден' })
+  @ApiForbiddenResponse({ description: 'Нет доступа к этому аккаунту' })
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id', ParseIdPipe) id: number) {
-    return this.usersService.remove(id);
+  remove(
+    @Param('id', ParseIdPipe) id: number,
+    @CurrentUser('sub') actorId: number,
+  ) {
+    return this.usersService.remove(id, actorId);
   }
 
   @ApiOperation({
@@ -127,8 +135,12 @@ export class UsersController {
   @ApiConflictResponse({
     description: 'Пользователь не удалён или его логин/email уже заняты',
   })
+  @ApiForbiddenResponse({ description: 'Доступно только администратору' })
   @Patch(':id/restore')
-  restore(@Param('id', ParseIdPipe) id: number) {
-    return this.usersService.restore(id);
+  restore(
+    @Param('id', ParseIdPipe) id: number,
+    @CurrentUser('sub') actorId: number,
+  ) {
+    return this.usersService.restore(id, actorId);
   }
 }

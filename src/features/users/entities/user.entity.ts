@@ -8,6 +8,7 @@ import {
   Index,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
+import { UserRole } from '../../../common/enums/user-role.enum';
 
 @Entity('users')
 @Index(['email'], { unique: true, where: '"deleted_at" IS NULL' })
@@ -21,6 +22,10 @@ export class User {
 
   @Column()
   email: string;
+
+  @Exclude()
+  @Column({ type: 'varchar', default: UserRole.USER })
+  role: UserRole;
 
   @Exclude()
   @Column({ select: false })
