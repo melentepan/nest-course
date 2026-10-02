@@ -2,6 +2,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -13,6 +14,8 @@ import { UserRole } from '../../common/enums/user-role.enum';
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(private readonly usersRepository: UsersRepository) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -21,10 +24,12 @@ export class UsersService {
     const hashedPass = await bcrypt.hash(createUserDto.password, 10);
 
     try {
-      return await this.usersRepository.create({
+      const user = await this.usersRepository.create({
         ...createUserDto,
         password: hashedPass,
       });
+      this.logger.log(`Пользователь ${user.id} создан`);
+      return user;
     } catch (error: unknown) {
       this.handleUniqueConflict(error);
     }
@@ -52,6 +57,9 @@ export class UsersService {
   async findAll(dto: PaginationQueryDto) {
     const [data, totalItems] = await this.usersRepository.findPage(dto);
     const totalPages = Math.ceil(totalItems / dto.limit) || 1;
+    this.logger.debug(
+      `Получена страница пользователей: page=${dto.page}, limit=${dto.limit}`,
+    );
 
     return {
       data,
@@ -73,6 +81,7 @@ export class UsersService {
       throw new NotFoundException(`Пользователь не найден`);
     }
 
+    this.logger.debug(`Получен пользователь ${id}`);
     return user;
   }
 
@@ -88,7 +97,9 @@ export class UsersService {
     Object.assign(user, updateUserDto);
 
     try {
-      return await this.usersRepository.save(user);
+      const updatedUser = await this.usersRepository.save(user);
+      this.logger.log(`Пользователь ${id} изменён пользователем ${actorId}`);
+      return updatedUser;
     } catch (error: unknown) {
       this.handleUniqueConflict(error);
     }
@@ -99,6 +110,7 @@ export class UsersService {
 
     const user = await this.findOne(id);
     await this.usersRepository.softRemove(user);
+    this.logger.log(`Пользователь ${id} удалён пользователем ${actorId}`);
   }
 
   async restore(id: number, actorId: number) {
@@ -138,6 +150,7 @@ export class UsersService {
       throw error;
     }
 
+    this.logger.log(`Пользователь ${id} восстановлен пользователем ${actorId}`);
     return this.findOne(id);
   }
 
@@ -155,6 +168,7 @@ export class UsersService {
 
   async logout(userId: number) {
     await this.usersRepository.setRefreshToken(userId, null);
+    this.logger.log(`Пользователь ${userId} вышел из системы`);
     return { message: 'Успешный выход из системы' };
   }
 

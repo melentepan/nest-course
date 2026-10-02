@@ -1,6 +1,6 @@
 import { UsersService } from '../features/users/users.service';
 import { JwtService } from '@nestjs/jwt';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { User } from '../features/users/entities/user.entity';
@@ -11,6 +11,8 @@ import { createHash } from 'node:crypto';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
@@ -21,6 +23,7 @@ export class AuthService {
     const user = await this.usersService.findByLogin(loginDto.login);
 
     if (!user) {
+      this.logger.warn('Неуспешная попытка входа');
       throw new UnauthorizedException('Неверный логин или пароль');
     }
 
@@ -30,12 +33,14 @@ export class AuthService {
     );
 
     if (!isPasswordValid) {
+      this.logger.warn('Неуспешная попытка входа');
       throw new UnauthorizedException('Неверный логин или пароль');
     }
 
     const tokens = await this.generateTokens(user);
 
     await this.updateRefreshToken(user.id, tokens.refreshToken);
+    this.logger.log(`Пользователь ${user.id} вошёл в систему`);
 
     return tokens;
   }
@@ -46,6 +51,7 @@ export class AuthService {
     const tokens = await this.generateTokens(user);
 
     await this.updateRefreshToken(user.id, tokens.refreshToken);
+    this.logger.log(`Пользователь ${user.id} зарегистрировался`);
 
     return tokens;
   }
@@ -90,16 +96,19 @@ export class AuthService {
         secret,
       });
     } catch {
+      this.logger.warn('Отклонено обновление токенов');
       throw new UnauthorizedException(invalidTokenMessage);
     }
 
     if (!Number.isInteger(payload.sub)) {
+      this.logger.warn('Отклонено обновление токенов');
       throw new UnauthorizedException(invalidTokenMessage);
     }
 
     const user = await this.usersService.findByIdWithRefreshToken(payload.sub);
 
     if (!user?.hashedRefreshToken) {
+      this.logger.warn('Отклонено обновление токенов');
       throw new UnauthorizedException(invalidTokenMessage);
     }
 
@@ -108,11 +117,13 @@ export class AuthService {
     const isTokenValid = await bcrypt.compare(digest, user.hashedRefreshToken);
 
     if (!isTokenValid) {
+      this.logger.warn('Отклонено обновление токенов');
       throw new UnauthorizedException(invalidTokenMessage);
     }
 
     const tokens = await this.generateTokens(user);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
+    this.logger.log(`Пользователь ${user.id} обновил токены`);
 
     return tokens;
   }
