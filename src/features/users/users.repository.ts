@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DatabaseError } from 'pg';
 import { Brackets, QueryFailedError, Repository } from 'typeorm';
-import { CreateUserDto } from './dto/create-user.dto';
-import { PaginationQueryDto } from './dto/pagination-query.dto';
+import { CreateUserDto } from './dto/createUser.dto';
+import { PaginationQueryDto } from './dto/paginationQuery.dto';
 import { User } from './entities/user.entity';
 
 export class UserUniqueConflictError extends Error {}
@@ -14,7 +14,7 @@ export class UsersRepository {
     @InjectRepository(User) private readonly repository: Repository<User>,
   ) {}
 
-  async create(data: CreateUserDto) {
+  create(data: CreateUserDto) {
     return this.save(this.repository.create(data));
   }
 
@@ -85,6 +85,35 @@ export class UsersRepository {
       .addSelect('user.hashedRefreshToken')
       .where('user.id = :id', { id })
       .getOne();
+  }
+
+  findActiveUsers(minAge: number, maxAge: number): Promise<User[]> {
+    return this.repository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect(
+        'user.avatars',
+        'avatar',
+        `avatar.id = (
+        SELECT latest.id
+        FROM user_avatars latest
+        WHERE latest.user_id = user.id
+          AND latest.deleted_at IS NULL
+        ORDER BY latest.created_at DESC, latest.id DESC
+        LIMIT 1
+      )`,
+      )
+      .where('user.age >= :minAge', { minAge })
+      .andWhere('user.age <= :maxAge', { maxAge })
+      .andWhere('LENGTH(TRIM(user.description)) > 0')
+      .andWhere(
+        `(
+        SELECT COUNT(*)
+        FROM user_avatars active_avatar
+        WHERE active_avatar.user_id = user.id
+          AND active_avatar.deleted_at IS NULL
+      ) > 2`,
+      )
+      .getMany();
   }
 
   async setRefreshToken(id: number, hashedToken: string | null) {
