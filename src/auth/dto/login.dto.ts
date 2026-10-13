@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsString, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { ToLowerCase } from '../../common/decorators/to-lower-case.decorator';
+import { ToLowerCase } from '../../common/decorators/toLowerCase.decorator';
 import { Trim } from '../../common/decorators/trim.decorator';
 
 export class LoginDto {
