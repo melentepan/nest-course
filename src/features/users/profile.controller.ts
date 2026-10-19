@@ -1,7 +1,7 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { AuthGuard } from '../../auth/guards/auth.guard';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { CurrentUser } from '../../common/decorators/currentUser.decorator';
 import {
   ApiBearerAuth,
   ApiOkResponse,
@@ -9,7 +9,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { UserResponseDto } from './dto/user-response.dto';
+import { UserResponseDto } from './dto/userResponse.dto';
 
 @ApiTags('Profile')
 @ApiBearerAuth('JWT-auth')
@@ -26,7 +26,7 @@ export class ProfileController {
     description: 'Access-токен отсутствует, недействителен или истёк',
   })
   @Get('my')
-  async getMyProfile(@CurrentUser('sub') userId: number) {
-    return this.usersService.findOne(userId);
+  getMyProfile(@CurrentUser('sub') userId: number) {
+    return this.usersService.getProfile(userId);
   }
 }

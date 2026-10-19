@@ -1,21 +1,38 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
+  Check,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
   DeleteDateColumn,
+  Entity,
   Index,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
-import { UserRole } from '../../../common/enums/user-role.enum';
+import { UserRole } from '../../../common/enums/userRole.enum';
+import { UserAvatar } from './userAvatar.entity';
 
 @Entity('users')
+@Check(
+  'CHK_users_balance_valid',
+  '"balance" >= 0 AND "balance" <> \'NaN\'::numeric',
+)
 @Index(['email'], { unique: true, where: '"deleted_at" IS NULL' })
 @Index(['username'], { unique: true, where: '"deleted_at" IS NULL' })
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @Exclude()
+  @Column({
+    type: 'numeric',
+    precision: 12,
+    scale: 2,
+    default: '0.00',
+    select: false,
+  })
+  balance: string;
 
   @Column()
   username: string;
@@ -54,5 +71,8 @@ export class User {
 
   @Exclude()
   @DeleteDateColumn({ name: 'deleted_at' })
-  deletedAt: Date;
+  deletedAt: Date | null;
+
+  @OneToMany(() => UserAvatar, (avatar) => avatar.user)
+  avatars: UserAvatar[];
 }

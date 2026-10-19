@@ -9,8 +9,8 @@ import {
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { RefreshTokenDto } from './dto/refreshToken.dto';
+import { CurrentUser } from '../common/decorators/currentUser.decorator';
 import { UsersService } from '../features/users/users.service';
 import { AuthGuard } from './guards/auth.guard';
 import {
@@ -22,9 +22,9 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { AuthTokensDto } from './dto/auth-tokens.dto';
-import { LogoutResponseDto } from './dto/logout-response.dto';
-import { RegisterConflictResponseDto } from './dto/register-conflict-response.dto';
+import { AuthTokensDto } from './dto/authTokens.dto';
+import { LogoutResponseDto } from './dto/logoutResponse.dto';
+import { RegisterConflictResponseDto } from './dto/registerConflictResponse.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -77,7 +77,7 @@ export class AuthController {
     description: 'Access-токен отсутствует, недействителен или истёк',
   })
   @Post('logout')
-  async logout(@CurrentUser('sub') userId: number) {
+  logout(@CurrentUser('sub') userId: number) {
     return this.usersService.logout(userId);
   }
 }
