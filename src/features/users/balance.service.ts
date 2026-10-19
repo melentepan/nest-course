@@ -7,12 +7,27 @@ import {
 } from '@nestjs/common';
 import { BalanceRepository } from './balance.repository';
 import { TransferMoneyDto } from './dto/transferMoney.dto';
+import {
+  BalanceLimitExceededError,
+  InsufficientBalanceError,
+  TransferUserNotFoundError,
+} from './errors/balance.errors';
 
 @Injectable()
 export class BalanceService {
   private readonly logger = new Logger(BalanceService.name);
 
   constructor(private readonly balanceRepository: BalanceRepository) {}
+
+  async resetAllBalances(actorId: number) {
+    const affectedUsers = await this.balanceRepository.resetAllBalances();
+
+    this.logger.log(
+      `Администратор ${actorId} обнулил балансы пользователей: затронуто=${affectedUsers}`,
+    );
+
+    return { affectedUsers };
+  }
 
   async transfer(senderId: number, dto: TransferMoneyDto) {
     this.logger.debug(
@@ -30,17 +45,23 @@ export class BalanceService {
       .catch((error: unknown) => {
         const transferDescription = `Перевод ${dto.amount} USD от пользователя ${senderId} пользователю ${dto.recipientId}`;
 
+        if (error instanceof TransferUserNotFoundError) {
+          this.logger.warn(`${transferDescription} отклонён: ${error.message}`);
+          throw new NotFoundException(error.message);
+        }
+
         if (
-          error instanceof NotFoundException ||
-          error instanceof ConflictException
+          error instanceof InsufficientBalanceError ||
+          error instanceof BalanceLimitExceededError
         ) {
           this.logger.warn(`${transferDescription} отклонён: ${error.message}`);
-        } else {
-          this.logger.error(
-            `${transferDescription} завершился ошибкой`,
-            error instanceof Error ? error.stack : undefined,
-          );
+          throw new ConflictException(error.message);
         }
+
+        this.logger.error(
+          `${transferDescription} завершился ошибкой`,
+          error instanceof Error ? error.stack : undefined,
+        );
 
         throw error;
       });

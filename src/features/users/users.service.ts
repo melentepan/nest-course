@@ -10,8 +10,10 @@ import {
 import { CreateUserDto } from './dto/createUser.dto';
 import { UpdateUserDto } from './dto/updateUser.dto';
 import * as bcrypt from 'bcrypt';
+import { randomUUID } from 'node:crypto';
 import { PaginationQueryDto } from './dto/paginationQuery.dto';
-import { UsersRepository, UserUniqueConflictError } from './users.repository';
+import { UsersRepository } from './users.repository';
+import { UserUniqueConflictError } from './errors/user.errors';
 import { UserRole } from '../../common/enums/userRole.enum';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { UserResponseDto } from './dto/userResponse.dto';
@@ -58,6 +60,7 @@ export class UsersService {
         ...createUserDto,
         password: hashedPass,
       });
+      await this.invalidateUsersListCache();
       this.logger.log(`Пользователь ${user.id} создан`);
       return user;
     } catch (error: unknown) {
@@ -85,7 +88,9 @@ export class UsersService {
   }
 
   async findAll(dto: PaginationQueryDto) {
-    const cacheKey = `users:list:${JSON.stringify({
+    const version =
+      (await this.cacheManager.get<string>('users:listVersion')) ?? 'initial';
+    const cacheKey = `users:list:${version}:${JSON.stringify({
       page: dto.page,
       limit: dto.limit,
       search: dto.search ?? '',
@@ -219,6 +224,8 @@ export class UsersService {
 
     try {
       const updatedUser = await this.usersRepository.save(user);
+      await this.cacheManager.del(`users:${id}`);
+      await this.invalidateUsersListCache();
       this.logger.log(`Пользователь ${id} изменён пользователем ${actorId}`);
       return updatedUser;
     } catch (error: unknown) {
@@ -231,6 +238,8 @@ export class UsersService {
 
     const user = await this.findOne(id);
     await this.usersRepository.softRemove(user);
+    await this.cacheManager.del(`users:${id}`);
+    await this.invalidateUsersListCache();
     this.logger.log(`Пользователь ${id} удалён пользователем ${actorId}`);
   }
 
@@ -271,6 +280,8 @@ export class UsersService {
       throw error;
     }
 
+    await this.cacheManager.del(`users:${id}`);
+    await this.invalidateUsersListCache();
     this.logger.log(`Пользователь ${id} восстановлен пользователем ${actorId}`);
     return this.findOne(id);
   }
@@ -291,6 +302,11 @@ export class UsersService {
     await this.usersRepository.setRefreshToken(userId, null);
     this.logger.log(`Пользователь ${userId} вышел из системы`);
     return { message: 'Успешный выход из системы' };
+  }
+
+  private async invalidateUsersListCache(): Promise<void> {
+    await this.cacheManager.set('users:listVersion', randomUUID(), 0);
+    this.logger.debug('Кэш списков пользователей инвалидирован');
   }
 
   private async assertOwnerOrAdmin(id: number, actorId: number) {

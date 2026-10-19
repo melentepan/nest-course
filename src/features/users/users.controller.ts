@@ -18,6 +18,7 @@ import { UpdateUserDto } from './dto/updateUser.dto';
 import { ParseIdPipe } from '../../common/pipes/parseId.pipe';
 import { CurrentUser } from '../../common/decorators/currentUser.decorator';
 import { AuthGuard } from '../../auth/guards/auth.guard';
+import { AdminGuard } from '../../auth/guards/admin.guard';
 import { PaginationQueryDto } from './dto/paginationQuery.dto';
 import {
   ApiBadRequestResponse,
@@ -47,6 +48,33 @@ export class UsersController {
     private readonly usersService: UsersService,
     private readonly balanceService: BalanceService,
   ) {}
+
+  @Post('balance/reset')
+  @UseGuards(AdminGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Обнуление всех балансов пользователей',
+    description:
+      'Доступно только администратору. Устанавливает баланс 0.00 USD всем пользователям, включая мягко удалённых. Тело запроса не требуется.',
+  })
+  @ApiOkResponse({
+    description:
+      'Балансы обнулены; affectedUsers включает пользователей с уже нулевым балансом',
+    schema: {
+      type: 'object',
+      required: ['affectedUsers'],
+      properties: {
+        affectedUsers: { type: 'integer', minimum: 0, example: 3 },
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Требуется действующий access-токен',
+  })
+  @ApiForbiddenResponse({ description: 'Доступно только администратору' })
+  resetAllBalances(@CurrentUser('sub') actorId: number) {
+    return this.balanceService.resetAllBalances(actorId);
+  }
 
   @Post('transfer')
   @HttpCode(HttpStatus.OK)

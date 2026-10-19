@@ -5,8 +5,7 @@ import { Brackets, QueryFailedError, Repository } from 'typeorm';
 import { CreateUserDto } from './dto/createUser.dto';
 import { PaginationQueryDto } from './dto/paginationQuery.dto';
 import { User } from './entities/user.entity';
-
-export class UserUniqueConflictError extends Error {}
+import { UserUniqueConflictError } from './errors/user.errors';
 
 @Injectable()
 export class UsersRepository {
@@ -89,27 +88,27 @@ export class UsersRepository {
 
   findActiveUsers(minAge: number, maxAge: number): Promise<User[]> {
     return this.repository
-      .createQueryBuilder('user')
+      .createQueryBuilder('u')
       .leftJoinAndSelect(
-        'user.avatars',
+        'u.avatars',
         'avatar',
         `avatar.id = (
         SELECT latest.id
         FROM user_avatars latest
-        WHERE latest.user_id = user.id
+        WHERE latest.user_id = u.id
           AND latest.deleted_at IS NULL
         ORDER BY latest.created_at DESC, latest.id DESC
         LIMIT 1
       )`,
       )
-      .where('user.age >= :minAge', { minAge })
-      .andWhere('user.age <= :maxAge', { maxAge })
-      .andWhere('LENGTH(TRIM(user.description)) > 0')
+      .where('u.age >= :minAge', { minAge })
+      .andWhere('u.age <= :maxAge', { maxAge })
+      .andWhere('LENGTH(TRIM(u.description)) > 0')
       .andWhere(
         `(
         SELECT COUNT(*)
         FROM user_avatars active_avatar
-        WHERE active_avatar.user_id = user.id
+        WHERE active_avatar.user_id = u.id
           AND active_avatar.deleted_at IS NULL
       ) > 2`,
       )

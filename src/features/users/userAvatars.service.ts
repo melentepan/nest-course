@@ -8,6 +8,10 @@ import { IFileService } from '../../providers/files/files.adapter';
 import { randomUUID } from 'node:crypto';
 import { UserAvatarsRepository } from './userAvatars.repository';
 import { UserAvatar } from './entities/userAvatar.entity';
+import {
+  ActiveAvatarLimitError,
+  AvatarUserNotFoundError,
+} from './errors/userAvatar.errors';
 
 @Injectable()
 export class UserAvatarsService {
@@ -68,7 +72,7 @@ export class UserAvatarsService {
         size: savedAvatar.size,
         createdAt: savedAvatar.createdAt,
       };
-    } catch (error) {
+    } catch (error: unknown) {
       try {
         await this.fileService.removeFile({ path });
       } catch (cleanupError) {
@@ -77,6 +81,15 @@ export class UserAvatarsService {
           cleanupError instanceof Error ? cleanupError.stack : undefined,
         );
       }
+
+      if (error instanceof AvatarUserNotFoundError) {
+        throw new NotFoundException(error.message);
+      }
+
+      if (error instanceof ActiveAvatarLimitError) {
+        throw new ConflictException(error.message);
+      }
+
       throw error;
     }
   }

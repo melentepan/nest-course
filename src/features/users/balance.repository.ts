@@ -1,15 +1,27 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { User } from './entities/user.entity';
 import { TransferMoneyDto } from './dto/transferMoney.dto';
+import {
+  BalanceLimitExceededError,
+  InsufficientBalanceError,
+  TransferUserNotFoundError,
+} from './errors/balance.errors';
 
 @Injectable()
 export class BalanceRepository {
   constructor(private readonly dataSource: DataSource) {}
+
+  async resetAllBalances(): Promise<number> {
+    const result = await this.dataSource
+      .getRepository(User)
+      .createQueryBuilder()
+      .update(User)
+      .set({ balance: '0.00' })
+      .execute();
+
+    return result.affected ?? 0;
+  }
 
   transfer(senderId: number, dto: TransferMoneyDto) {
     return this.dataSource.transaction(async (manager) => {
@@ -23,7 +35,9 @@ export class BalanceRepository {
           .where('user.id = :id', { id })
           .getOne();
         if (!user) {
-          throw new NotFoundException('Отправитель или получатель не найден');
+          throw new TransferUserNotFoundError(
+            'Отправитель или получатель не найден',
+          );
         }
       }
 
@@ -36,7 +50,7 @@ export class BalanceRepository {
         .setParameter('amount', dto.amount)
         .execute();
       if (debit.affected !== 1) {
-        throw new ConflictException('Недостаточно средств');
+        throw new InsufficientBalanceError('Недостаточно средств');
       }
 
       const credit = await repository
@@ -48,7 +62,9 @@ export class BalanceRepository {
         .setParameter('amount', dto.amount)
         .execute();
       if (credit.affected !== 1) {
-        throw new ConflictException('Превышен максимальный баланс получателя');
+        throw new BalanceLimitExceededError(
+          'Превышен максимальный баланс получателя',
+        );
       }
 
       const sender = await repository

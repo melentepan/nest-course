@@ -1,14 +1,14 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, LessThan, MoreThan, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { UserAvatar } from './entities/userAvatar.entity';
 
 import type { CreateUserAvatarData } from './interfaces/createUserAvatarData.interface';
+import {
+  ActiveAvatarLimitError,
+  AvatarUserNotFoundError,
+} from './errors/userAvatar.errors';
 
 @Injectable()
 export class UserAvatarsRepository {
@@ -99,7 +99,7 @@ export class UserAvatarsRepository {
         .getOne();
 
       if (!user) {
-        throw new NotFoundException('Пользователь не найден');
+        throw new AvatarUserNotFoundError('Пользователь не найден');
       }
 
       const repository = manager.getRepository(UserAvatar);
@@ -107,7 +107,9 @@ export class UserAvatarsRepository {
         where: { user: { id: data.userId } },
       });
       if (count >= 5) {
-        throw new ConflictException('Можно загрузить максимум пять аватарок');
+        throw new ActiveAvatarLimitError(
+          'Можно загрузить максимум пять аватарок',
+        );
       }
 
       return repository.save(
