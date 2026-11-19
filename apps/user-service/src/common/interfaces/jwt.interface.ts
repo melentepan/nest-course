@@ -1,3 +1,6 @@
+import type { Request } from 'express';
+import type { AccessTokenClaims } from '@app/common';
+
 export interface JwtPayload {
   sub: number;
   email: string;
@@ -7,5 +10,5 @@ export interface JwtPayload {
 }
 
 export interface AuthenticatedRequest extends Request {
-  user?: JwtPayload;
+  user?: AccessTokenClaims;
 }

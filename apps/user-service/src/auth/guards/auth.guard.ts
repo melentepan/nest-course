@@ -4,20 +4,16 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
+import { AccessTokenService, InvalidAccessTokenError } from '@app/common';
 import { Request } from 'express';
-import { JwtPayload } from '../../common/interfaces/jwt.interface';
+import { AuthenticatedRequest } from '../../common/interfaces/jwt.interface';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(
-    private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly accessTokenService: AccessTokenService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<Request>();
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const token = this.extractTokenFromHeader(request);
 
     if (!token) {
@@ -25,13 +21,14 @@ export class AuthGuard implements CanActivate {
     }
 
     try {
-      request['user'] = await this.jwtService.verifyAsync<JwtPayload>(token, {
-        secret: this.configService.getOrThrow<string>('jwt.access.secret'),
-      });
-    } catch {
-      throw new UnauthorizedException(
-        'Недействительный или истекший access-токен',
-      );
+      request.user = await this.accessTokenService.verify(token);
+    } catch (error: unknown) {
+      if (error instanceof InvalidAccessTokenError) {
+        throw new UnauthorizedException(
+          'Недействительный или истекший access-токен',
+        );
+      }
+      throw error;
     }
 
     return true;

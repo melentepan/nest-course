@@ -56,34 +56,6 @@ export class AuthService {
     return tokens;
   }
 
-  private async generateTokens(user: User) {
-    const payload = {
-      sub: user.id,
-      email: user.email,
-      username: user.username,
-    };
-
-    const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload, {
-        secret: this.configService.getOrThrow('jwt.access.secret'),
-        expiresIn: this.configService.get('jwt.access.expiresIn', '15m'),
-      }),
-      this.jwtService.signAsync(payload, {
-        secret: this.configService.getOrThrow<string>('jwt.refresh.secret'),
-        expiresIn: this.configService.get('jwt.refresh.expiresIn', '7d'),
-      }),
-    ]);
-
-    return { accessToken, refreshToken };
-  }
-
-  private async updateRefreshToken(id: number, refreshToken: string) {
-    const digest = this.getRefreshTokenDigest(refreshToken);
-    const hashedToken = await bcrypt.hash(digest, 10);
-
-    await this.usersService.updateRefreshToken(id, hashedToken);
-  }
-
   async refreshTokens(refreshToken: string) {
     const secret = this.configService.getOrThrow<string>('jwt.refresh.secret');
     const invalidTokenMessage =
@@ -126,6 +98,35 @@ export class AuthService {
     this.logger.log(`Пользователь ${user.id} обновил токены`);
 
     return tokens;
+  }
+
+  private async generateTokens(user: User) {
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      username: user.username,
+    };
+
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(payload, {
+        secret: this.configService.getOrThrow('jwt.access.secret'),
+        algorithm: 'HS256',
+        expiresIn: this.configService.get('jwt.access.expiresIn', '15m'),
+      }),
+      this.jwtService.signAsync(payload, {
+        secret: this.configService.getOrThrow<string>('jwt.refresh.secret'),
+        expiresIn: this.configService.get('jwt.refresh.expiresIn', '7d'),
+      }),
+    ]);
+
+    return { accessToken, refreshToken };
+  }
+
+  private async updateRefreshToken(id: number, refreshToken: string) {
+    const digest = this.getRefreshTokenDigest(refreshToken);
+    const hashedToken = await bcrypt.hash(digest, 10);
+
+    await this.usersService.updateRefreshToken(id, hashedToken);
   }
 
   private getRefreshTokenDigest(refreshToken: string): string {
