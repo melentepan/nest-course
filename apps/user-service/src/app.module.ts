@@ -1,3 +1,4 @@
+import { OutboxModule } from './providers/outbox/outbox.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Module } from '@nestjs/common';
 import { ProvidersModule } from './providers/providers.module';
@@ -27,6 +28,7 @@ import { SchedulingModule } from './providers/scheduling/scheduling.module';
     FeaturesModule,
     AuthModule,
     SchedulingModule,
+    OutboxModule,
   ],
 })
 export class AppModule {}

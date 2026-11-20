@@ -39,7 +39,7 @@ export class AuthController {
   @ApiOkResponse({ type: AuthTokensDto, description: 'Новая пара JWT-токенов' })
   @ApiUnauthorizedResponse({ description: 'Неверный логин или пароль' })
   @Post('login')
-  login(@Body() loginDto: LoginDto) {
+  login(@Body() loginDto: LoginDto): Promise<AuthTokensDto> {
     return this.authService.login(loginDto);
   }
 
@@ -53,7 +53,7 @@ export class AuthController {
     description: 'Пользователь с таким логином или email уже зарегистрирован',
   })
   @Post('register')
-  register(@Body() registerDto: RegisterDto) {
+  register(@Body() registerDto: RegisterDto): Promise<AuthTokensDto> {
     return this.authService.register(registerDto);
   }
 
@@ -64,7 +64,7 @@ export class AuthController {
     description: 'Refresh-токен недействителен, истёк или сессия завершена',
   })
   @Post('refresh')
-  refresh(@Body() refreshTokenDto: RefreshTokenDto) {
+  refresh(@Body() refreshTokenDto: RefreshTokenDto): Promise<AuthTokensDto> {
     return this.authService.refreshTokens(refreshTokenDto.refreshToken);
   }
 
@@ -77,7 +77,7 @@ export class AuthController {
     description: 'Access-токен отсутствует, недействителен или истёк',
   })
   @Post('logout')
-  logout(@CurrentUser('sub') userId: number) {
+  logout(@CurrentUser('sub') userId: number): Promise<LogoutResponseDto> {
     return this.usersService.logout(userId);
   }
 }

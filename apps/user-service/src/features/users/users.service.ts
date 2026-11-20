@@ -1,3 +1,4 @@
+import type { LogoutResponseDto } from '../../auth/dto/logoutResponse.dto';
 import {
   BadRequestException,
   ConflictException,
@@ -34,7 +35,7 @@ export class UsersService {
     private readonly cacheManager: Cache,
   ) {}
 
-  getActiveUsers(minAge: number, maxAge: number) {
+  getActiveUsers(minAge: number, maxAge: number): Promise<User[]> {
     if (
       !Number.isSafeInteger(minAge) ||
       !Number.isSafeInteger(maxAge) ||
@@ -50,7 +51,7 @@ export class UsersService {
     return this.usersRepository.findActiveUsers(minAge, maxAge);
   }
 
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto): Promise<User> {
     await this.isExist(createUserDto);
 
     const hashedPass = await bcrypt.hash(createUserDto.password, 10);
@@ -68,7 +69,7 @@ export class UsersService {
     }
   }
 
-  async isExist(createUserDto: CreateUserDto) {
+  async isExist(createUserDto: CreateUserDto): Promise<void> {
     const existingUser = await this.usersRepository.findActiveByEmailOrUsername(
       createUserDto.email,
       createUserDto.username,
@@ -87,7 +88,7 @@ export class UsersService {
     }
   }
 
-  async findAll(dto: PaginationQueryDto) {
+  async findAll(dto: PaginationQueryDto): Promise<PaginatedUsersResponseDto> {
     const version =
       (await this.cacheManager.get<string>('users:listVersion')) ?? 'initial';
     const cacheKey = `users:list:${version}:${JSON.stringify({
@@ -211,7 +212,11 @@ export class UsersService {
     return user;
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto, actorId: number) {
+  async update(
+    id: number,
+    updateUserDto: UpdateUserDto,
+    actorId: number,
+  ): Promise<User> {
     await this.assertOwnerOrAdmin(id, actorId);
 
     const user = await this.findOne(id);
@@ -233,7 +238,7 @@ export class UsersService {
     }
   }
 
-  async remove(id: number, actorId: number) {
+  async remove(id: number, actorId: number): Promise<void> {
     await this.assertOwnerOrAdmin(id, actorId);
 
     const user = await this.findOne(id);
@@ -243,7 +248,7 @@ export class UsersService {
     this.logger.log(`Пользователь ${id} удалён пользователем ${actorId}`);
   }
 
-  async restore(id: number, actorId: number) {
+  async restore(id: number, actorId: number): Promise<User> {
     await this.assertAdmin(actorId);
 
     const user = await this.usersRepository.findByIdIncludingDeleted(id);
@@ -286,11 +291,11 @@ export class UsersService {
     return this.findOne(id);
   }
 
-  findByLogin(login: string) {
+  findByLogin(login: string): Promise<User | null> {
     return this.usersRepository.findByLogin(login);
   }
 
-  findByIdWithRefreshToken(id: number) {
+  findByIdWithRefreshToken(id: number): Promise<User | null> {
     return this.usersRepository.findByIdWithRefreshToken(id);
   }
 
@@ -298,7 +303,7 @@ export class UsersService {
     return this.usersRepository.setRefreshToken(id, hashedToken);
   }
 
-  async logout(userId: number) {
+  async logout(userId: number): Promise<LogoutResponseDto> {
     await this.usersRepository.setRefreshToken(userId, null);
     this.logger.log(`Пользователь ${userId} вышел из системы`);
     return { message: 'Успешный выход из системы' };
@@ -309,7 +314,7 @@ export class UsersService {
     this.logger.debug('Кэш списков пользователей инвалидирован');
   }
 
-  private async assertOwnerOrAdmin(id: number, actorId: number) {
+  private async assertOwnerOrAdmin(id: number, actorId: number): Promise<void> {
     const actor = await this.usersRepository.findById(actorId);
 
     if (!actor || (actor.id !== id && actor.role !== UserRole.ADMIN)) {
@@ -317,7 +322,7 @@ export class UsersService {
     }
   }
 
-  private async assertAdmin(actorId: number) {
+  private async assertAdmin(actorId: number): Promise<void> {
     const actor = await this.usersRepository.findById(actorId);
 
     if (actor?.role !== UserRole.ADMIN) {

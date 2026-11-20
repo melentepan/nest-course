@@ -1,3 +1,5 @@
+import type { CleanupResult } from './interfaces/cleanupResult.interface';
+import type { EnqueueCleanupResult } from './interfaces/enqueueCleanupResult.interface';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import { ConfigService } from '@nestjs/config';
@@ -17,7 +19,7 @@ export class AvatarCleanupService {
     private readonly fileService: IFileService,
   ) {}
 
-  async enqueueCleanup(jobId?: string) {
+  async enqueueCleanup(jobId?: string): Promise<EnqueueCleanupResult> {
     const job = await this.cleanupQueue.add(
       'cleanup',
       {},
@@ -34,7 +36,7 @@ export class AvatarCleanupService {
     };
   }
 
-  async cleanup() {
+  async cleanup(): Promise<CleanupResult> {
     const retentionMs = this.configService.getOrThrow<number>(
       'avatarCleanup.retentionMs',
     );

@@ -1,3 +1,4 @@
+import type { EnqueueCleanupResult } from './interfaces/enqueueCleanupResult.interface';
 import {
   Controller,
   HttpCode,
@@ -42,7 +43,7 @@ export class AvatarCleanupController {
       },
     },
   })
-  enqueueCleanup() {
+  enqueueCleanup(): Promise<EnqueueCleanupResult> {
     return this.avatarCleanupService.enqueueCleanup();
   }
 }

@@ -13,11 +13,11 @@ export class UsersRepository {
     @InjectRepository(User) private readonly repository: Repository<User>,
   ) {}
 
-  create(data: CreateUserDto) {
+  create(data: CreateUserDto): Promise<User> {
     return this.save(this.repository.create(data));
   }
 
-  async save(user: User) {
+  async save(user: User): Promise<User> {
     try {
       return await this.repository.save(user);
     } catch (error: unknown) {
@@ -25,11 +25,14 @@ export class UsersRepository {
     }
   }
 
-  findActiveByEmailOrUsername(email: string, username: string) {
+  findActiveByEmailOrUsername(
+    email: string,
+    username: string,
+  ): Promise<User | null> {
     return this.repository.findOne({ where: [{ email }, { username }] });
   }
 
-  findPage(dto: PaginationQueryDto) {
+  findPage(dto: PaginationQueryDto): Promise<[User[], number]> {
     const qb = this.repository.createQueryBuilder('user');
 
     if (dto.search) {
@@ -50,19 +53,19 @@ export class UsersRepository {
       .getManyAndCount();
   }
 
-  findById(id: number) {
+  findById(id: number): Promise<User | null> {
     return this.repository.findOneBy({ id });
   }
 
-  findByIdIncludingDeleted(id: number) {
+  findByIdIncludingDeleted(id: number): Promise<User | null> {
     return this.repository.findOne({ where: { id }, withDeleted: true });
   }
 
-  async softRemove(user: User) {
+  async softRemove(user: User): Promise<void> {
     await this.repository.softRemove(user);
   }
 
-  async restore(id: number) {
+  async restore(id: number): Promise<void> {
     try {
       await this.repository.restore(id);
     } catch (error: unknown) {
@@ -70,7 +73,7 @@ export class UsersRepository {
     }
   }
 
-  findByLogin(login: string) {
+  findByLogin(login: string): Promise<User | null> {
     return this.repository
       .createQueryBuilder('user')
       .addSelect('user.password')
@@ -78,7 +81,7 @@ export class UsersRepository {
       .getOne();
   }
 
-  findByIdWithRefreshToken(id: number) {
+  findByIdWithRefreshToken(id: number): Promise<User | null> {
     return this.repository
       .createQueryBuilder('user')
       .addSelect('user.hashedRefreshToken')
@@ -115,7 +118,7 @@ export class UsersRepository {
       .getMany();
   }
 
-  async setRefreshToken(id: number, hashedToken: string | null) {
+  async setRefreshToken(id: number, hashedToken: string | null): Promise<void> {
     await this.repository.update(id, { hashedRefreshToken: hashedToken });
   }
 

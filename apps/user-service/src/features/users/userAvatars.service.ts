@@ -1,3 +1,4 @@
+import type { UploadAvatarResult } from './interfaces/uploadAvatarResult.interface';
 import {
   ConflictException,
   Injectable,
@@ -41,7 +42,10 @@ export class UserAvatarsService {
     );
   }
 
-  async upload(file: Express.Multer.File, actorId: number) {
+  async upload(
+    file: Express.Multer.File,
+    actorId: number,
+  ): Promise<UploadAvatarResult> {
     const count = await this.userAvatarsRepository.countByUserId(actorId);
     if (count >= 5) {
       throw new ConflictException('Можно загрузить максимум пять аватарок');

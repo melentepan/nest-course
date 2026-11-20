@@ -26,7 +26,7 @@ export class ProfileController {
     description: 'Access-токен отсутствует, недействителен или истёк',
   })
   @Get('my')
-  getMyProfile(@CurrentUser('sub') userId: number) {
+  getMyProfile(@CurrentUser('sub') userId: number): Promise<UserResponseDto> {
     return this.usersService.getProfile(userId);
   }
 }

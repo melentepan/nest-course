@@ -1,3 +1,5 @@
+import type { TransferResult } from './interfaces/transferResult.interface';
+import type { ResetBalancesResult } from './interfaces/resetBalancesResult.interface';
 import {
   BadRequestException,
   ConflictException,
@@ -19,7 +21,7 @@ export class BalanceService {
 
   constructor(private readonly balanceRepository: BalanceRepository) {}
 
-  async resetAllBalances(actorId: number) {
+  async resetAllBalances(actorId: number): Promise<ResetBalancesResult> {
     const affectedUsers = await this.balanceRepository.resetAllBalances();
 
     this.logger.log(
@@ -29,7 +31,10 @@ export class BalanceService {
     return { affectedUsers };
   }
 
-  async transfer(senderId: number, dto: TransferMoneyDto) {
+  async transfer(
+    senderId: number,
+    dto: TransferMoneyDto,
+  ): Promise<TransferResult> {
     this.logger.debug(
       `Начало перевода ${dto.amount} USD от пользователя ${senderId} пользователю ${dto.recipientId}`,
     );

@@ -1,3 +1,4 @@
+import { CreateTransferOutbox1795176000000 } from '../../outbox/migrations/1795176000000-createTransferOutbox';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -14,6 +15,8 @@ import { ConfigService } from '@nestjs/config';
         database: configService.getOrThrow<string>('database.name'),
         synchronize: configService.get('database.synchronize'),
         autoLoadEntities: true,
+        migrations: [CreateTransferOutbox1795176000000],
+        migrationsRun: true,
       }),
       inject: [ConfigService],
     }),

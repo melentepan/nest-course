@@ -1,3 +1,5 @@
+import type { UserAvatar } from './entities/userAvatar.entity';
+import type { UploadAvatarResult } from './interfaces/uploadAvatarResult.interface';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UserAvatarsService } from './userAvatars.service';
 import {
@@ -123,7 +125,7 @@ export class UserAvatarsController {
     )
     file: Express.Multer.File,
     @CurrentUser('sub') actorId: number,
-  ) {
+  ): Promise<UploadAvatarResult> {
     return this.userAvatarsService.upload(file, actorId);
   }
 
@@ -135,7 +137,7 @@ export class UserAvatarsController {
       'Аватарки от новых к старым; если аватарок нет — пустой массив',
   })
   @Get()
-  getAvatars(@CurrentUser('sub') actorId: number) {
+  getAvatars(@CurrentUser('sub') actorId: number): Promise<UserAvatar[]> {
     return this.userAvatarsService.getUserAvatars(actorId);
   }
 }

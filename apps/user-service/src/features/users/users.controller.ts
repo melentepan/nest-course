@@ -1,3 +1,6 @@
+import type { User } from './entities/user.entity';
+import type { TransferResult } from './interfaces/transferResult.interface';
+import type { ResetBalancesResult } from './interfaces/resetBalancesResult.interface';
 import {
   Body,
   Controller,
@@ -72,7 +75,9 @@ export class UsersController {
     description: 'Требуется действующий access-токен',
   })
   @ApiForbiddenResponse({ description: 'Доступно только администратору' })
-  resetAllBalances(@CurrentUser('sub') actorId: number) {
+  resetAllBalances(
+    @CurrentUser('sub') actorId: number,
+  ): Promise<ResetBalancesResult> {
     return this.balanceService.resetAllBalances(actorId);
   }
 
@@ -99,7 +104,7 @@ export class UsersController {
   transfer(
     @Body() dto: TransferMoneyDto,
     @CurrentUser('sub') senderId: number,
-  ) {
+  ): Promise<TransferResult> {
     return this.balanceService.transfer(senderId, dto);
   }
 
@@ -116,7 +121,9 @@ export class UsersController {
     description: 'Access-токен отсутствует, недействителен или истёк',
   })
   @Get()
-  findAll(@Query() query: PaginationQueryDto) {
+  findAll(
+    @Query() query: PaginationQueryDto,
+  ): Promise<PaginatedUsersResponseDto> {
     return this.usersService.findAll(query);
   }
 
@@ -142,7 +149,7 @@ export class UsersController {
   getActiveUsers(
     @Query('minAge', ParseIntPipe) minAge: number,
     @Query('maxAge', ParseIntPipe) maxAge: number,
-  ) {
+  ): Promise<User[]> {
     return this.usersService.getActiveUsers(minAge, maxAge);
   }
 
@@ -159,7 +166,7 @@ export class UsersController {
   @ApiBadRequestResponse({ description: 'ID должен быть числом' })
   @ApiNotFoundResponse({ description: 'Пользователь не найден' })
   @Get(':id')
-  findOne(@Param('id', ParseIdPipe) id: number) {
+  findOne(@Param('id', ParseIdPipe) id: number): Promise<UserResponseDto> {
     return this.usersService.getProfile(id);
   }
 
@@ -182,7 +189,7 @@ export class UsersController {
     @Param('id', ParseIdPipe) id: number,
     @Body() updateUserDto: UpdateUserDto,
     @CurrentUser('sub') actorId: number,
-  ) {
+  ): Promise<User> {
     return this.usersService.update(id, updateUserDto, actorId);
   }
 
@@ -204,7 +211,7 @@ export class UsersController {
   remove(
     @Param('id', ParseIdPipe) id: number,
     @CurrentUser('sub') actorId: number,
-  ) {
+  ): Promise<void> {
     return this.usersService.remove(id, actorId);
   }
 
@@ -228,7 +235,7 @@ export class UsersController {
   restore(
     @Param('id', ParseIdPipe) id: number,
     @CurrentUser('sub') actorId: number,
-  ) {
+  ): Promise<User> {
     return this.usersService.restore(id, actorId);
   }
 }

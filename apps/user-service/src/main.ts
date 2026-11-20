@@ -20,6 +20,7 @@ async function bootstrap() {
 
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
+  app.enableShutdownHooks();
   await app.listen(process.env.USER_SERVICE_PORT ?? 3000);
 }
 void bootstrap();

@@ -1,3 +1,6 @@
+import type { TransferResult } from './interfaces/transferResult.interface';
+import { randomUUID } from 'node:crypto';
+import type { TransferCompletedEvent } from '@app/common';
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { User } from './entities/user.entity';
@@ -23,7 +26,7 @@ export class BalanceRepository {
     return result.affected ?? 0;
   }
 
-  transfer(senderId: number, dto: TransferMoneyDto) {
+  transfer(senderId: number, dto: TransferMoneyDto): Promise<TransferResult> {
     return this.dataSource.transaction(async (manager) => {
       const repository = manager.getRepository(User);
       const ids = [senderId, dto.recipientId].sort((a, b) => a - b);
@@ -72,6 +75,17 @@ export class BalanceRepository {
         .addSelect('user.balance')
         .where('user.id = :senderId', { senderId })
         .getOneOrFail();
+      const event: TransferCompletedEvent = {
+        eventId: randomUUID(),
+        fromUserId: senderId,
+        toUserId: dto.recipientId,
+        amount: dto.amount,
+        occurredAt: new Date().toISOString(),
+      };
+      await manager.query(
+        'INSERT INTO transfer_outbox (id, payload) VALUES ($1, $2::jsonb)',
+        [event.eventId, JSON.stringify(event)],
+      );
       return {
         recipientId: dto.recipientId,
         amount: dto.amount,

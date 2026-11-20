@@ -1,3 +1,4 @@
+import type { AuthTokensDto } from './dto/authTokens.dto';
 import { UsersService } from '../features/users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
@@ -19,7 +20,7 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginDto): Promise<AuthTokensDto> {
     const user = await this.usersService.findByLogin(loginDto.login);
 
     if (!user) {
@@ -45,7 +46,7 @@ export class AuthService {
     return tokens;
   }
 
-  async register(registerDto: RegisterDto) {
+  async register(registerDto: RegisterDto): Promise<AuthTokensDto> {
     const user = await this.usersService.create(registerDto);
 
     const tokens = await this.generateTokens(user);
@@ -56,7 +57,7 @@ export class AuthService {
     return tokens;
   }
 
-  async refreshTokens(refreshToken: string) {
+  async refreshTokens(refreshToken: string): Promise<AuthTokensDto> {
     const secret = this.configService.getOrThrow<string>('jwt.refresh.secret');
     const invalidTokenMessage =
       'Недействительный или просроченный refresh-токен';
@@ -100,7 +101,7 @@ export class AuthService {
     return tokens;
   }
 
-  private async generateTokens(user: User) {
+  private async generateTokens(user: User): Promise<AuthTokensDto> {
     const payload = {
       sub: user.id,
       email: user.email,
@@ -122,7 +123,10 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  private async updateRefreshToken(id: number, refreshToken: string) {
+  private async updateRefreshToken(
+    id: number,
+    refreshToken: string,
+  ): Promise<void> {
     const digest = this.getRefreshTokenDigest(refreshToken);
     const hashedToken = await bcrypt.hash(digest, 10);
 

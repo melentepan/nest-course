@@ -7,12 +7,14 @@ import {
 } from '@app/common';
 import { NotificationServiceController } from './notification-service.controller';
 import { NotificationServiceService } from './notification-service.service';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
     LoggingModule,
     HttpErrorsModule,
+    NotificationModule,
     AccessTokenModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

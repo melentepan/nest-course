@@ -8,3 +8,5 @@ export * from './errors/httpErrorResponse.interface';
 export * from './errors/httpException.filter';
 export * from './errors/httpErrors.module';
 export * from './contracts/transferCompleted.event';
+
+export * from './kafka/kafka.config';
