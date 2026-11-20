@@ -10,3 +10,10 @@ export * from './errors/httpErrors.module';
 export * from './contracts/transferCompleted.event';
 
 export * from './kafka/kafka.config';
+
+export * from './lifecycle/lifecycle.module';
+export * from './lifecycle/shutdown.service';
+export * from './lifecycle/setupShutdown';
+export * from './health/health.controller';
+export * from './health/kafkaHealth.service';
+export * from './health/interfaces/health.interface';

@@ -1,5 +1,10 @@
+import { MetricsService } from '../providers/metrics/metrics.service';
 import { Logger } from '@nestjs/common';
-import { AccessTokenService, InvalidAccessTokenError } from '@app/common';
+import {
+  AccessTokenService,
+  InvalidAccessTokenError,
+  ShutdownService,
+} from '@app/common';
 import {
   MessageBody,
   OnGatewayConnection,
@@ -28,7 +33,11 @@ export class NotificationGateway
   @WebSocketServer()
   private server: NotificationServer;
 
-  constructor(private readonly accessTokenService: AccessTokenService) {}
+  constructor(
+    private readonly accessTokenService: AccessTokenService,
+    private readonly shutdown: ShutdownService,
+    private readonly metrics: MetricsService,
+  ) {}
 
   afterInit(server: NotificationServer): void {
     server.use((client, next) => {
@@ -49,6 +58,8 @@ export class NotificationGateway
 
   @SubscribeMessage('hello')
   handleHello(@MessageBody() payload: unknown): HelloAcknowledgement {
+    if (this.shutdown.isDraining)
+      return { ok: false, error: 'Приложение останавливается' };
     if (
       typeof payload !== 'object' ||
       payload === null ||
@@ -64,6 +75,10 @@ export class NotificationGateway
   }
 
   async handleConnection(client: NotificationSocket): Promise<void> {
+    if (this.shutdown.isDraining) {
+      client.disconnect(true);
+      return;
+    }
     try {
       await client.join(this.getUserRoom(client.data.userId));
     } catch {
@@ -73,6 +88,12 @@ export class NotificationGateway
       client.disconnect(true);
       return;
     }
+
+    if (!client.connected || this.shutdown.isDraining) {
+      client.disconnect(true);
+      return;
+    }
+    this.metrics.addConnection(client.id);
 
     this.logger.log(
       `Клиент подключился: ${client.id}, пользователь: ${client.data.userId}`,
@@ -84,6 +105,7 @@ export class NotificationGateway
   }
 
   handleDisconnect(client: NotificationSocket): void {
+    this.metrics.removeConnection(client.id);
     this.logger.log(`Клиент отключился: ${client.id}`);
   }
 
@@ -106,12 +128,14 @@ export class NotificationGateway
   }
 
   private async authenticate(client: NotificationSocket): Promise<void> {
+    if (this.shutdown.isDraining) throw new Error('Приложение останавливается');
     const token: unknown = client.handshake.auth.token;
     if (typeof token !== 'string' || token.trim().length === 0) {
       throw new InvalidAccessTokenError('Access-токен не передан');
     }
 
     const claims = await this.accessTokenService.verify(token);
+    if (this.shutdown.isDraining) throw new Error('Приложение останавливается');
     client.data.userId = claims.sub;
   }
 

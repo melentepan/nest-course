@@ -1,3 +1,4 @@
+import { ShutdownService } from '@app/common';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SchedulerRegistry } from '@nestjs/schedule';
@@ -10,6 +11,7 @@ export class AvatarCleanupScheduler implements OnModuleInit {
 
   constructor(
     private readonly configService: ConfigService,
+    private readonly shutdown: ShutdownService,
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly avatarCleanupService: AvatarCleanupService,
   ) {}
@@ -39,6 +41,8 @@ export class AvatarCleanupScheduler implements OnModuleInit {
   }
 
   private async enqueueCleanup(): Promise<void> {
+    const release = this.shutdown.beginWork();
+    if (!release) return;
     try {
       const minute = Math.floor(Date.now() / 60000);
       const jobId = `avatar-cleanup-${minute}`;
@@ -53,6 +57,8 @@ export class AvatarCleanupScheduler implements OnModuleInit {
         'Не удалось добавить задачу чистки по расписанию',
         error instanceof Error ? error.stack : String(error),
       );
+    } finally {
+      release();
     }
   }
 }

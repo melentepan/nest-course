@@ -3,3 +3,7 @@ export interface TransferResult {
   amount: string;
   balance: string;
 }
+
+export interface TransferCommitResult extends TransferResult {
+  eventId: string;
+}

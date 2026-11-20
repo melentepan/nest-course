@@ -1,3 +1,4 @@
+import { HealthModule } from './providers/health/health.module';
 import { OutboxModule } from './providers/outbox/outbox.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Module } from '@nestjs/common';
@@ -14,6 +15,7 @@ import { SchedulingModule } from './providers/scheduling/scheduling.module';
 
 @Module({
   imports: [
+    HealthModule,
     LoggingModule,
     HttpErrorsModule,
     AccessTokenModule.registerAsync({

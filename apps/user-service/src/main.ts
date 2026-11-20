@@ -1,3 +1,4 @@
+import { setupShutdown, ShutdownService } from '@app/common';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
@@ -7,6 +8,7 @@ import { Logger } from 'nestjs-pino';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
+  setupShutdown(app);
 
   setupSwagger(app);
 
@@ -20,7 +22,7 @@ async function bootstrap() {
 
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
-  app.enableShutdownHooks();
   await app.listen(process.env.USER_SERVICE_PORT ?? 3000);
+  app.get(ShutdownService).markStarted();
 }
 void bootstrap();

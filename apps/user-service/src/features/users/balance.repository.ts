@@ -1,4 +1,4 @@
-import type { TransferResult } from './interfaces/transferResult.interface';
+import type { TransferCommitResult } from './interfaces/transferResult.interface';
 import { randomUUID } from 'node:crypto';
 import type { TransferCompletedEvent } from '@app/common';
 import { Injectable } from '@nestjs/common';
@@ -26,7 +26,10 @@ export class BalanceRepository {
     return result.affected ?? 0;
   }
 
-  transfer(senderId: number, dto: TransferMoneyDto): Promise<TransferResult> {
+  transfer(
+    senderId: number,
+    dto: TransferMoneyDto,
+  ): Promise<TransferCommitResult> {
     return this.dataSource.transaction(async (manager) => {
       const repository = manager.getRepository(User);
       const ids = [senderId, dto.recipientId].sort((a, b) => a - b);
@@ -87,6 +90,7 @@ export class BalanceRepository {
         [event.eventId, JSON.stringify(event)],
       );
       return {
+        eventId: event.eventId,
         recipientId: dto.recipientId,
         amount: dto.amount,
         balance: sender.balance,

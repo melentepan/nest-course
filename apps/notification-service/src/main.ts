@@ -1,7 +1,7 @@
+import { getKafkaBrokers, setupShutdown, ShutdownService } from '@app/common';
 import { ConfigService } from '@nestjs/config';
 import type { KafkaOptions } from '@nestjs/microservices';
 import { Transport } from '@nestjs/microservices';
-import { getKafkaBrokers } from '@app/common';
 import { NestFactory } from '@nestjs/core';
 import { Logger } from 'nestjs-pino';
 import { NotificationServiceModule } from './notification-service.module';
@@ -11,6 +11,7 @@ async function bootstrap() {
     bufferLogs: true,
   });
   app.useLogger(app.get(Logger));
+  setupShutdown(app);
   const config = app.get(ConfigService);
   app.connectMicroservice<KafkaOptions>({
     transport: Transport.KAFKA,
@@ -27,9 +28,9 @@ async function bootstrap() {
       run: { autoCommit: false },
     },
   });
-  app.enableShutdownHooks();
   await app.init();
   await app.startAllMicroservices();
   await app.listen(process.env.NOTIFICATION_SERVICE_PORT ?? 3001);
+  app.get(ShutdownService).markStarted();
 }
 void bootstrap();

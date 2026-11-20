@@ -1,3 +1,10 @@
+import { MetricsModule } from '../providers/metrics/metrics.module';
+import { MongooseModule } from '@nestjs/mongoose';
+import {
+  TransferNotification,
+  TransferNotificationSchema,
+} from './schemas/transferNotification.schema';
+import { NotificationRepository } from './notification.repository';
 import { TransferEventsController } from './kafka/transferEvents.controller';
 import { Module } from '@nestjs/common';
 import { NotificationGateway } from './notification.gateway';
@@ -6,7 +13,18 @@ import { NotificationService } from './notification.service';
 import { NotificationAuthGuard } from './guards/notificationAuth.guard';
 
 @Module({
+  imports: [
+    MetricsModule,
+    MongooseModule.forFeature([
+      { name: TransferNotification.name, schema: TransferNotificationSchema },
+    ]),
+  ],
   controllers: [NotificationController, TransferEventsController],
-  providers: [NotificationGateway, NotificationService, NotificationAuthGuard],
+  providers: [
+    NotificationRepository,
+    NotificationGateway,
+    NotificationService,
+    NotificationAuthGuard,
+  ],
 })
 export class NotificationModule {}

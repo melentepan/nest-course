@@ -71,9 +71,14 @@ export class BalanceService {
         throw error;
       });
 
-    this.logger.log(
-      `Перевод ${dto.amount} USD от пользователя ${senderId} пользователю ${dto.recipientId} завершён`,
-    );
-    return result;
+    const { eventId, ...response } = result;
+    this.logger.log({
+      msg: 'Перевод завершён',
+      eventId,
+      fromUserId: senderId,
+      toUserId: dto.recipientId,
+      amount: dto.amount,
+    });
+    return response;
   }
 }

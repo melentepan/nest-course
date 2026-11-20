@@ -36,6 +36,19 @@ services:
       - "127.0.0.1:${REDIS_PORT}:6379"
     restart: unless-stopped
 
+  mongodb:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: [ "CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   kafka:
     image: confluentinc/cp-kafka:7.4.0
     hostname: kafka
@@ -88,3 +101,4 @@ volumes:
   postgres_data:
   minio_storage:
   kafka_data:
+  mongodb_data:
