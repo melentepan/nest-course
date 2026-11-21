@@ -1,0 +1,33 @@
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+
+import { AuthGuard } from '../../auth/guards/auth.guard';
+import { CurrentUser } from '../../common/decorators/currentUser.decorator';
+import { UserResponseDto } from './dto/userResponse.dto';
+import { UsersService } from './users.service';
+
+@ApiTags('Profile')
+@ApiBearerAuth('JWT-auth')
+@UseGuards(AuthGuard)
+@Controller('profile')
+export class ProfileController {
+  constructor(private readonly usersService: UsersService) {}
+
+  @ApiOperation({
+    summary: 'Получение профиля текущего пользователя',
+  })
+  @ApiOkResponse({ type: UserResponseDto })
+  @ApiUnauthorizedResponse({
+    description: 'Access-токен отсутствует, недействителен или истёк',
+  })
+  @Get('my')
+  getMyProfile(@CurrentUser('sub') userId: number): Promise<UserResponseDto> {
+    return this.usersService.getProfile(userId);
+  }
+}

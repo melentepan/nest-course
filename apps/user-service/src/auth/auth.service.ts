@@ -1,0 +1,141 @@
+import { createHash } from 'node:crypto';
+
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
+
+import { JwtPayload } from '../common/interfaces/jwt.interface';
+import { User } from '../features/users/entities/user.entity';
+import { UsersService } from '../features/users/users.service';
+import type { AuthTokensDto } from './dto/authTokens.dto';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+
+@Injectable()
+export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  async login(loginDto: LoginDto): Promise<AuthTokensDto> {
+    const user = await this.usersService.findByLogin(loginDto.login);
+
+    if (!user) {
+      this.logger.warn('Неуспешная попытка входа');
+      throw new UnauthorizedException('Неверный логин или пароль');
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      loginDto.password,
+      user.password,
+    );
+
+    if (!isPasswordValid) {
+      this.logger.warn('Неуспешная попытка входа');
+      throw new UnauthorizedException('Неверный логин или пароль');
+    }
+
+    const tokens = await this.generateTokens(user);
+
+    await this.updateRefreshToken(user.id, tokens.refreshToken);
+    this.logger.log(`Пользователь ${user.id} вошёл в систему`);
+
+    return tokens;
+  }
+
+  async register(registerDto: RegisterDto): Promise<AuthTokensDto> {
+    const user = await this.usersService.create(registerDto);
+
+    const tokens = await this.generateTokens(user);
+
+    await this.updateRefreshToken(user.id, tokens.refreshToken);
+    this.logger.log(`Пользователь ${user.id} зарегистрировался`);
+
+    return tokens;
+  }
+
+  async refreshTokens(refreshToken: string): Promise<AuthTokensDto> {
+    const secret = this.configService.getOrThrow<string>('jwt.refresh.secret');
+    const invalidTokenMessage =
+      'Недействительный или просроченный refresh-токен';
+
+    let payload: JwtPayload;
+
+    try {
+      payload = await this.jwtService.verifyAsync<JwtPayload>(refreshToken, {
+        secret,
+      });
+    } catch {
+      this.logger.warn('Отклонено обновление токенов');
+      throw new UnauthorizedException(invalidTokenMessage);
+    }
+
+    if (!Number.isInteger(payload.sub)) {
+      this.logger.warn('Отклонено обновление токенов');
+      throw new UnauthorizedException(invalidTokenMessage);
+    }
+
+    const user = await this.usersService.findByIdWithRefreshToken(payload.sub);
+
+    if (!user?.hashedRefreshToken) {
+      this.logger.warn('Отклонено обновление токенов');
+      throw new UnauthorizedException(invalidTokenMessage);
+    }
+
+    const digest = this.getRefreshTokenDigest(refreshToken);
+
+    const isTokenValid = await bcrypt.compare(digest, user.hashedRefreshToken);
+
+    if (!isTokenValid) {
+      this.logger.warn('Отклонено обновление токенов');
+      throw new UnauthorizedException(invalidTokenMessage);
+    }
+
+    const tokens = await this.generateTokens(user);
+    await this.updateRefreshToken(user.id, tokens.refreshToken);
+    this.logger.log(`Пользователь ${user.id} обновил токены`);
+
+    return tokens;
+  }
+
+  private async generateTokens(user: User): Promise<AuthTokensDto> {
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      username: user.username,
+    };
+
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(payload, {
+        secret: this.configService.getOrThrow('jwtAccess.secret'),
+        algorithm: 'HS256',
+        expiresIn: this.configService.get('jwtAccess.expiresIn', '15m'),
+      }),
+      this.jwtService.signAsync(payload, {
+        secret: this.configService.getOrThrow<string>('jwt.refresh.secret'),
+        expiresIn: this.configService.get('jwt.refresh.expiresIn', '7d'),
+      }),
+    ]);
+
+    return { accessToken, refreshToken };
+  }
+
+  private async updateRefreshToken(
+    id: number,
+    refreshToken: string,
+  ): Promise<void> {
+    const digest = this.getRefreshTokenDigest(refreshToken);
+    const hashedToken = await bcrypt.hash(digest, 10);
+
+    await this.usersService.updateRefreshToken(id, hashedToken);
+  }
+
+  private getRefreshTokenDigest(refreshToken: string): string {
+    return createHash('sha256').update(refreshToken, 'utf8').digest('hex');
+  }
+}

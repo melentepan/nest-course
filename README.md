@@ -1,98 +1,119 @@
-<p align="center">
-  <a href="https://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Nest Course: User Service и Notification Service
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Монорепозиторий NestJS: HTTP API пользователей, профилей, аватаров и переводов;
+уведомления о переводах через Kafka и Socket.IO. Общий код находится в
+`libs/common`.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Подготовка
 
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
+Нужны Node.js 22+, npm и Docker Compose. Все команды выполняются из корня
+проекта.
+Приложения запускаются локально, инфраструктура — в Docker.
 
 ```bash
-$ npm install
+npm ci
+cp .env.example .env
 ```
 
-## Compile and run the project
+Заполните `.env` для локального запуска:
+
+| Переменные                                        | Значения                       |
+|---------------------------------------------------|--------------------------------|
+| `DB_HOST`, `DB_PORT`, `DB_NAME`                   | `localhost`, `5432`, `nest_db` |
+| `DB_USERNAME`, `DB_PASSWORD`                      | `nest_user`, `nest_password`   |
+| `DB_SYNCHRONIZE`                                  | `false`                        |
+| `S3_ENDPOINT`                                     | `http://localhost:9000`        |
+| `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`        | оба `minioadmin`               |
+| `REDIS_HOST`, `REDIS_PORT`                        | `localhost`, `6379`            |
+| `REDIS_PASSWORD`                                  | свой пароль                    |
+| `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`         | два разных секрета             |
+| `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN` | `15m`, `7d`                    |
+| `NODE_ENV`                                        | `development`                  |
+
+Остальные значения оставьте из `.env.example`. Оба приложения используют один
+`.env`.
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+docker compose up -d
+docker compose ps -a
 ```
 
-## Run tests
+Compose поднимает PostgreSQL, Redis, MinIO, Kafka, Kafka UI и MongoDB.
+`kafka-init` должен завершиться с кодом 0: он создаёт топик
+`transfer.completed`.
+MongoDB используется реализованным бонусом истории и необходима текущему
+Notification Service.
+
+Откройте MinIO Console: http://localhost:9001, войдите с `minioadmin` /
+`minioadmin`
+и создайте приватный бакет `user-avatars`. Это нужно для загрузки аватаров.
+
+## Схема базы данных
+
+Оставьте `DB_SYNCHRONIZE=false`. При запуске User Service миграции автоматически
+создают `users`, `user_avatars` и `transfer_outbox`, включая индексы и
+ограничения.
+В существующей учебной БД с обеими таблицами пользователей и аватаров начальная
+миграция сохраняет их без изменений; частичная схема требует ручной проверки.
+Автоматический откат начальной миграции запрещён, чтобы не удалить существующие
+данные.
+
+## Запуск приложений
+
+В двух отдельных терминалах:
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npx nest start user-service --watch
 ```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npx nest start notification-service --watch
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+- User Service: http://localhost:3000, Swagger: http://localhost:3000/api/docs
+- Notification Service: http://localhost:3001
+- Kafka UI: http://localhost:8080
+- У обоих приложений: `GET /health/live`, `GET /health/ready` (200 — готово,
+  503 — не готово).
+- Метрики Notification Service: `GET http://localhost:3001/metrics`.
 
-## Resources
+## Socket.IO
 
-Check out a few resources that may come in handy when working with NestJS:
+В Postman создайте Socket.IO-запрос к `http://localhost:3001`.
+Передайте access-токен User Service в handshake auth:
+`{"token":"<accessToken>"}`
+(`handshake.auth.token`). Добавьте слушатель события `notification` и
+подключитесь.
+Сервер проверит JWT и добавит соединение в комнату пользователя; после успешного
+перевода уведомление получают подключённые устройства отправителя и получателя.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## Проверки кода
 
-## Support
+```bash
+npx nest build user-service
+npx nest build notification-service
+npm run lint
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Тесты
 
-## Stay in touch
+```bash
+npm test
+```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Быстрые проверки JWT, отправки уведомлений и подтверждения Kafka offset работают
+без Docker.
 
-## License
+```bash
+docker compose up -d
+npm run test:integration
+```
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Интеграционные тесты читают подключения PostgreSQL и MongoDB из `.env`, создают
+отдельную схему PostgreSQL и отдельную MongoDB-базу со случайными именами
+`test_*`,
+затем удаляют их. Пользователю PostgreSQL нужно право создания схем.
+Проверяются реальные откаты и конкурентные переводы, история, карантин и комнаты
+Socket.IO через polling. Kafka-брокер в этом наборе не участвует: публикация
+Outbox
+передаётся обработчику напрямую. При недоступной БД тесты завершаются ошибкой.

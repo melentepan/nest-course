@@ -1,0 +1,242 @@
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiConflictResponse,
+  ApiForbiddenResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+
+import { AdminGuard } from '../../auth/guards/admin.guard';
+import { AuthGuard } from '../../auth/guards/auth.guard';
+import { CurrentUser } from '../../common/decorators/currentUser.decorator';
+import { ParseIdPipe } from '../../common/pipes/parseId.pipe';
+import { BalanceService } from './balance.service';
+import { PaginatedUsersResponseDto } from './dto/paginatedUsersResponse.dto';
+import { PaginationQueryDto } from './dto/paginationQuery.dto';
+import { TransferMoneyDto } from './dto/transferMoney.dto';
+// import { CreateUserDto } from './dto/createUser.dto';
+import { UpdateUserDto } from './dto/updateUser.dto';
+import { UserResponseDto } from './dto/userResponse.dto';
+import type { User } from './entities/user.entity';
+import type { ResetBalancesResult } from './interfaces/resetBalancesResult.interface';
+import type { TransferResult } from './interfaces/transferResult.interface';
+import { UsersService } from './users.service';
+
+@ApiTags('Users')
+@ApiBearerAuth('JWT-auth')
+@UseGuards(AuthGuard)
+@Controller('users')
+export class UsersController {
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly balanceService: BalanceService,
+  ) {}
+
+  @Post('balance/reset')
+  @UseGuards(AdminGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Обнуление всех балансов пользователей',
+    description:
+      'Доступно только администратору. Устанавливает баланс 0.00 USD всем пользователям, включая мягко удалённых. Тело запроса не требуется.',
+  })
+  @ApiOkResponse({
+    description:
+      'Балансы обнулены; affectedUsers включает пользователей с уже нулевым балансом',
+    schema: {
+      type: 'object',
+      required: ['affectedUsers'],
+      properties: {
+        affectedUsers: { type: 'integer', minimum: 0, example: 3 },
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Требуется действующий access-токен',
+  })
+  @ApiForbiddenResponse({ description: 'Доступно только администратору' })
+  resetAllBalances(
+    @CurrentUser('sub') actorId: number,
+  ): Promise<ResetBalancesResult> {
+    return this.balanceService.resetAllBalances(actorId);
+  }
+
+  @Post('transfer')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Перевод USD текущего пользователя другому пользователю',
+  })
+  @ApiOkResponse({
+    description:
+      'Перевод выполнен; возвращаются recipientId, amount и остаток balance отправителя',
+  })
+  @ApiBadRequestResponse({
+    description: 'Некорректная сумма, получатель или перевод самому себе',
+  })
+  @ApiNotFoundResponse({ description: 'Отправитель или получатель не найден' })
+  @ApiConflictResponse({
+    description:
+      'Недостаточно средств или превышен максимальный баланс получателя',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Требуется действующий access-токен',
+  })
+  transfer(
+    @Body() dto: TransferMoneyDto,
+    @CurrentUser('sub') senderId: number,
+  ): Promise<TransferResult> {
+    return this.balanceService.transfer(senderId, dto);
+  }
+
+  // @Post()
+  // create(@Body() createUserDto: CreateUserDto) {
+  //   return this.usersService.create(createUserDto);
+  // }
+
+  @ApiOperation({
+    summary: 'Получение всех пользователей',
+  })
+  @ApiOkResponse({ type: PaginatedUsersResponseDto })
+  @ApiUnauthorizedResponse({
+    description: 'Access-токен отсутствует, недействителен или истёк',
+  })
+  @Get()
+  findAll(
+    @Query() query: PaginationQueryDto,
+  ): Promise<PaginatedUsersResponseDto> {
+    return this.usersService.findAll(query);
+  }
+
+  @Get('active')
+  @ApiOperation({
+    summary: 'Пользователи с описанием и более чем двумя активными аватарками',
+    description:
+      'Возвращает пользователей в заданном диапазоне возраста и последнюю активную аватарку каждого в массиве avatars.',
+  })
+  @ApiQuery({ name: 'minAge', type: Number, required: true, example: 18 })
+  @ApiQuery({ name: 'maxAge', type: Number, required: true, example: 35 })
+  @ApiOkResponse({
+    description:
+      'Список подходящих пользователей; при отсутствии результатов — пустой массив',
+  })
+  @ApiBadRequestResponse({
+    description:
+      'Границы возраста должны быть неотрицательными целыми числами; minAge не должен превышать maxAge',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Access-токен отсутствует, недействителен или истёк',
+  })
+  getActiveUsers(
+    @Query('minAge', ParseIntPipe) minAge: number,
+    @Query('maxAge', ParseIntPipe) maxAge: number,
+  ): Promise<User[]> {
+    return this.usersService.getActiveUsers(minAge, maxAge);
+  }
+
+  @ApiOperation({
+    summary: 'Получение пользователя по ID',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID пользователя',
+    type: Number,
+    example: 1,
+  })
+  @ApiOkResponse({ type: UserResponseDto })
+  @ApiBadRequestResponse({ description: 'ID должен быть числом' })
+  @ApiNotFoundResponse({ description: 'Пользователь не найден' })
+  @Get(':id')
+  findOne(@Param('id', ParseIdPipe) id: number): Promise<UserResponseDto> {
+    return this.usersService.getProfile(id);
+  }
+
+  @ApiOperation({
+    summary: 'Изменение пользователя по ID',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID пользователя',
+    type: Number,
+    example: 1,
+  })
+  @ApiOkResponse({ type: UserResponseDto })
+  @ApiBadRequestResponse({ description: 'ID или данные запроса некорректны' })
+  @ApiNotFoundResponse({ description: 'Пользователь не найден' })
+  @ApiConflictResponse({ description: 'Логин или email уже заняты' })
+  @ApiForbiddenResponse({ description: 'Нет доступа к этому аккаунту' })
+  @Patch(':id')
+  update(
+    @Param('id', ParseIdPipe) id: number,
+    @Body() updateUserDto: UpdateUserDto,
+    @CurrentUser('sub') actorId: number,
+  ): Promise<User> {
+    return this.usersService.update(id, updateUserDto, actorId);
+  }
+
+  @ApiOperation({
+    summary: 'Удаление пользователя по ID',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID пользователя',
+    type: Number,
+    example: 1,
+  })
+  @ApiNoContentResponse({ description: 'Пользователь мягко удалён' })
+  @ApiBadRequestResponse({ description: 'ID должен быть числом' })
+  @ApiNotFoundResponse({ description: 'Пользователь не найден' })
+  @ApiForbiddenResponse({ description: 'Нет доступа к этому аккаунту' })
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  remove(
+    @Param('id', ParseIdPipe) id: number,
+    @CurrentUser('sub') actorId: number,
+  ): Promise<void> {
+    return this.usersService.remove(id, actorId);
+  }
+
+  @ApiOperation({
+    summary: 'Восстановление пользователя по ID',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID пользователя',
+    type: Number,
+    example: 1,
+  })
+  @ApiOkResponse({ type: UserResponseDto })
+  @ApiBadRequestResponse({ description: 'ID должен быть числом' })
+  @ApiNotFoundResponse({ description: 'Пользователь не найден' })
+  @ApiConflictResponse({
+    description: 'Пользователь не удалён или его логин/email уже заняты',
+  })
+  @ApiForbiddenResponse({ description: 'Доступно только администратору' })
+  @Patch(':id/restore')
+  restore(
+    @Param('id', ParseIdPipe) id: number,
+    @CurrentUser('sub') actorId: number,
+  ): Promise<User> {
+    return this.usersService.restore(id, actorId);
+  }
+}
