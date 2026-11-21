@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, LessThan, MoreThan, Repository } from 'typeorm';
+
 import { User } from './entities/user.entity';
 import { UserAvatar } from './entities/userAvatar.entity';
-
-import type { CreateUserAvatarData } from './interfaces/createUserAvatarData.interface';
 import {
   ActiveAvatarLimitError,
   AvatarUserNotFoundError,
 } from './errors/userAvatar.errors';
+import type { CreateUserAvatarData } from './interfaces/createUserAvatarData.interface';
 
 @Injectable()
 export class UserAvatarsRepository {

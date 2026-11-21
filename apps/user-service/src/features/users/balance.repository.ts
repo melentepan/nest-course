@@ -1,15 +1,18 @@
-import type { TransferCommitResult } from './interfaces/transferResult.interface';
 import { randomUUID } from 'node:crypto';
-import type { TransferCompletedEvent } from '@app/common';
+
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { User } from './entities/user.entity';
+
+import type { TransferCompletedEvent } from '@app/common';
+
 import { TransferMoneyDto } from './dto/transferMoney.dto';
+import { User } from './entities/user.entity';
 import {
   BalanceLimitExceededError,
   InsufficientBalanceError,
   TransferUserNotFoundError,
 } from './errors/balance.errors';
+import type { TransferCommitResult } from './interfaces/transferResult.interface';
 
 @Injectable()
 export class BalanceRepository {

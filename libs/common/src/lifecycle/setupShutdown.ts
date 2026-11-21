@@ -1,5 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
 import type { NextFunction, Request, Response } from 'express';
+
 import { ShutdownService } from './shutdown.service';
 
 export function setupShutdown(app: INestApplication): void {

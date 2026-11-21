@@ -1,5 +1,6 @@
-import type { TransferCompletedEvent } from '@app/common';
 import type { Server, Socket } from 'socket.io';
+
+import type { TransferCompletedEvent } from '@app/common';
 
 export interface WelcomePayload {
   message: string;

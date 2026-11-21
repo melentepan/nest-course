@@ -17,3 +17,9 @@ export * from './lifecycle/setupShutdown';
 export * from './health/health.controller';
 export * from './health/kafkaHealth.service';
 export * from './health/interfaces/health.interface';
+
+export * from './auth/accessToken.config';
+
+export * from './health/health.service';
+
+export * from './configs/env.validation';

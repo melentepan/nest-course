@@ -1,7 +1,4 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
-import { UsersService } from './users.service';
-import { AuthGuard } from '../../auth/guards/auth.guard';
-import { CurrentUser } from '../../common/decorators/currentUser.decorator';
 import {
   ApiBearerAuth,
   ApiOkResponse,
@@ -9,7 +6,11 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+
+import { AuthGuard } from '../../auth/guards/auth.guard';
+import { CurrentUser } from '../../common/decorators/currentUser.decorator';
 import { UserResponseDto } from './dto/userResponse.dto';
+import { UsersService } from './users.service';
 
 @ApiTags('Profile')
 @ApiBearerAuth('JWT-auth')

@@ -1,8 +1,10 @@
-import { ShutdownService } from '@app/common';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
+
+import { ShutdownService } from '@app/common';
+
 import { AvatarCleanupService } from './avatarCleanup.service';
 
 @Injectable()
@@ -42,7 +44,9 @@ export class AvatarCleanupScheduler implements OnModuleInit {
 
   private async enqueueCleanup(): Promise<void> {
     const release = this.shutdown.beginWork();
-    if (!release) return;
+    if (!release) {
+      return;
+    }
     try {
       const minute = Math.floor(Date.now() / 60000);
       const jobId = `avatar-cleanup-${minute}`;

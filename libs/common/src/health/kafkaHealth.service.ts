@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Kafka, logLevel } from 'kafkajs';
-import { getKafkaBrokers } from '../kafka/kafka.config';
+
 import { TRANSFER_COMPLETED_EVENT } from '../contracts/transferCompleted.event';
 
 @Injectable()
@@ -11,7 +11,7 @@ export class KafkaHealthService {
   async ping(): Promise<void> {
     const admin = new Kafka({
       clientId: 'readiness',
-      brokers: getKafkaBrokers(this.config),
+      brokers: this.config.getOrThrow<string[]>('kafka.brokers'),
       connectionTimeout: 1000,
       requestTimeout: 1000,
       retry: { retries: 0 },

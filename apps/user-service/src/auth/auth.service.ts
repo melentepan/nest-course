@@ -1,14 +1,16 @@
-import type { AuthTokensDto } from './dto/authTokens.dto';
-import { UsersService } from '../features/users/users.service';
-import { JwtService } from '@nestjs/jwt';
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
-import { LoginDto } from './dto/login.dto';
-import * as bcrypt from 'bcrypt';
-import { User } from '../features/users/entities/user.entity';
-import { ConfigService } from '@nestjs/config';
-import { RegisterDto } from './dto/register.dto';
-import { JwtPayload } from '../common/interfaces/jwt.interface';
 import { createHash } from 'node:crypto';
+
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
+
+import { JwtPayload } from '../common/interfaces/jwt.interface';
+import { User } from '../features/users/entities/user.entity';
+import { UsersService } from '../features/users/users.service';
+import type { AuthTokensDto } from './dto/authTokens.dto';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 
 @Injectable()
 export class AuthService {
@@ -110,9 +112,9 @@ export class AuthService {
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
-        secret: this.configService.getOrThrow('jwt.access.secret'),
+        secret: this.configService.getOrThrow('jwtAccess.secret'),
         algorithm: 'HS256',
-        expiresIn: this.configService.get('jwt.access.expiresIn', '15m'),
+        expiresIn: this.configService.get('jwtAccess.expiresIn', '15m'),
       }),
       this.jwtService.signAsync(payload, {
         secret: this.configService.getOrThrow<string>('jwt.refresh.secret'),

@@ -1,7 +1,3 @@
-import type { UserAvatar } from './entities/userAvatar.entity';
-import type { UploadAvatarResult } from './interfaces/uploadAvatarResult.interface';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { UserAvatarsService } from './userAvatars.service';
 import {
   Controller,
   Delete,
@@ -16,8 +12,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { AuthGuard } from '../../auth/guards/auth.guard';
-import { CurrentUser } from '../../common/decorators/currentUser.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -34,6 +29,12 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+
+import { AuthGuard } from '../../auth/guards/auth.guard';
+import { CurrentUser } from '../../common/decorators/currentUser.decorator';
+import type { UserAvatar } from './entities/userAvatar.entity';
+import type { UploadAvatarResult } from './interfaces/uploadAvatarResult.interface';
+import { UserAvatarsService } from './userAvatars.service';
 
 @ApiTags('Аватарки')
 @ApiBearerAuth('JWT-auth')

@@ -1,7 +1,9 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, mongo } from 'mongoose';
+
 import type { TransferCompletedEvent } from '@app/common';
+
 import { TransferNotification } from './schemas/transferNotification.schema';
 
 @Injectable()

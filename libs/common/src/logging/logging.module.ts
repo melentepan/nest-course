@@ -1,9 +1,10 @@
-import { Module } from '@nestjs/common';
-import { LoggerModule } from 'nestjs-pino';
-import { ClsModule, ClsServiceManager } from 'nestjs-cls';
 import { randomUUID } from 'node:crypto';
 import type { IncomingMessage } from 'node:http';
+
+import { Module } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import { ClsModule, ClsServiceManager } from 'nestjs-cls';
+import { LoggerModule } from 'nestjs-pino';
 
 function getOrCreateRequestId(req: IncomingMessage): string {
   if (typeof req.id === 'string' && req.id.length > 0) {

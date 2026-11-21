@@ -4,8 +4,10 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { AccessTokenService, InvalidAccessTokenError } from '@app/common';
 import { Request } from 'express';
+
+import { AccessTokenService, InvalidAccessTokenError } from '@app/common';
+
 import { AuthenticatedRequest } from '../../common/interfaces/jwt.interface';
 
 @Injectable()

@@ -3,11 +3,11 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 
 import { IFileService } from '../files.adapter';
 import { S3Lib } from './constants/doSpacesServiceLib.constant';
-import { RemoveException } from './exceptions/remove.exception';
-import { UploadException } from './exceptions/upload.exception';
+import { RemoveFilePayloadDto } from './dto/removeFilePayload.dto';
 import { UploadFilePayloadDto } from './dto/uploadFilePayload.dto';
 import { UploadFileResultDto } from './dto/uploadFileResult.dto';
-import { RemoveFilePayloadDto } from './dto/removeFilePayload.dto';
+import { RemoveException } from './exceptions/remove.exception';
+import { UploadException } from './exceptions/upload.exception';
 
 @Injectable()
 export class S3Service extends IFileService {

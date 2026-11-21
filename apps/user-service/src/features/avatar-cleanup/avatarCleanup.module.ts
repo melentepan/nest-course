@@ -1,12 +1,13 @@
-import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
+import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { AvatarCleanupService } from './avatarCleanup.service';
-import { AvatarCleanupController } from './avatarCleanup.controller';
+
+import { FilesModule } from '../../providers/files/files.module';
 import { UsersModule } from '../users/users.module';
+import { AvatarCleanupController } from './avatarCleanup.controller';
 import { AvatarCleanupProcessor } from './avatarCleanup.processor';
 import { AvatarCleanupScheduler } from './avatarCleanup.scheduler';
-import { FilesModule } from '../../providers/files/files.module';
+import { AvatarCleanupService } from './avatarCleanup.service';
 
 @Module({
   imports: [

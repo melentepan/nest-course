@@ -1,7 +1,8 @@
 import { Global, Module } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { ShutdownService } from './shutdown.service';
+
 import { ShutdownInterceptor } from './shutdown.interceptor';
+import { ShutdownService } from './shutdown.service';
 
 @Global()
 @Module({

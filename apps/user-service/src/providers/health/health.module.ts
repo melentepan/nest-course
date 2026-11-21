@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+
 import type { DependencyChecks } from '@app/common';
 import {
   HEALTH_CHECKS,
   HealthController,
+  HealthService,
   KafkaHealthService,
   LifecycleModule,
 } from '@app/common';
@@ -12,6 +14,7 @@ import {
   imports: [LifecycleModule],
   controllers: [HealthController],
   providers: [
+    HealthService,
     KafkaHealthService,
     {
       provide: HEALTH_CHECKS,

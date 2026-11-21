@@ -1,6 +1,7 @@
 // @ts-check
 import eslint from '@eslint/js';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
@@ -25,11 +26,19 @@ export default tseslint.config(
     },
   },
   {
+    plugins: { 'simple-import-sort': simpleImportSort },
     rules: {
+      curly: ['error', 'all'],
+      'simple-import-sort/imports': [
+        'error',
+        {
+          groups: [['^\\u0000'], ['^node:'], ['^@?\\w'], ['^@app/'], ['^\\.']],
+        },
+      ],
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
-      "prettier/prettier": ["error", { endOfLine: "auto" }],
+      'prettier/prettier': ['error', { endOfLine: 'auto' }],
     },
   },
 );

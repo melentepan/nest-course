@@ -1,18 +1,19 @@
 import { Module } from '@nestjs/common';
-import { UsersService } from './users.service';
-import { UsersController } from './users.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from './entities/user.entity';
-import { ProfileController } from './profile.controller';
-import { UsersRepository } from './users.repository';
-import { UserAvatar } from './entities/userAvatar.entity';
-import { UserAvatarsController } from './userAvatars.controller';
-import { UserAvatarsService } from './userAvatars.service';
-import { UserAvatarsRepository } from './userAvatars.repository';
-import { FilesModule } from '../../providers/files/files.module';
+
 import { AppCacheModule } from '../../providers/cache/cache.module';
+import { FilesModule } from '../../providers/files/files.module';
 import { BalanceRepository } from './balance.repository';
 import { BalanceService } from './balance.service';
+import { User } from './entities/user.entity';
+import { UserAvatar } from './entities/userAvatar.entity';
+import { ProfileController } from './profile.controller';
+import { UserAvatarsController } from './userAvatars.controller';
+import { UserAvatarsRepository } from './userAvatars.repository';
+import { UserAvatarsService } from './userAvatars.service';
+import { UsersController } from './users.controller';
+import { UsersRepository } from './users.repository';
+import { UsersService } from './users.service';
 
 @Module({
   imports: [

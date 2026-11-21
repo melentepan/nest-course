@@ -1,5 +1,3 @@
-import type { TransferResult } from './interfaces/transferResult.interface';
-import type { ResetBalancesResult } from './interfaces/resetBalancesResult.interface';
 import {
   BadRequestException,
   ConflictException,
@@ -7,6 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+
 import { BalanceRepository } from './balance.repository';
 import { TransferMoneyDto } from './dto/transferMoney.dto';
 import {
@@ -14,6 +13,8 @@ import {
   InsufficientBalanceError,
   TransferUserNotFoundError,
 } from './errors/balance.errors';
+import type { ResetBalancesResult } from './interfaces/resetBalancesResult.interface';
+import type { TransferResult } from './interfaces/transferResult.interface';
 
 @Injectable()
 export class BalanceService {

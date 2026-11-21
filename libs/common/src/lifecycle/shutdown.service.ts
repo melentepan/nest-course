@@ -32,8 +32,9 @@ export class ShutdownService
   }
 
   onModuleInit(): void {
-    for (const signal of this.signals)
+    for (const signal of this.signals) {
       process.prependListener(signal, this.onSignal);
+    }
   }
 
   registerStopHandler(handler: () => Promise<void>): void {
@@ -41,7 +42,9 @@ export class ShutdownService
   }
 
   startDraining(): void {
-    if (this.draining) return;
+    if (this.draining) {
+      return;
+    }
     this.draining = true;
     this.stoppingWork = Promise.all(
       this.stopHandlers.map(async (stop) => {
@@ -59,14 +62,20 @@ export class ShutdownService
   }
 
   beginWork(): (() => void) | null {
-    if (this.draining) return null;
+    if (this.draining) {
+      return null;
+    }
     this.active++;
     let released = false;
     return () => {
-      if (released) return;
+      if (released) {
+        return;
+      }
       released = true;
       this.active--;
-      if (this.active === 0) this.resolveIdle?.();
+      if (this.active === 0) {
+        this.resolveIdle?.();
+      }
     };
   }
 
@@ -85,8 +94,9 @@ export class ShutdownService
   }
 
   onApplicationShutdown(): void {
-    for (const signal of this.signals)
+    for (const signal of this.signals) {
       process.removeListener(signal, this.onSignal);
+    }
   }
 
   private readonly onSignal = (): void => this.startDraining();

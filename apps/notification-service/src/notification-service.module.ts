@@ -1,20 +1,23 @@
-import { HealthModule } from './providers/health/health.module';
-import { MongoDbModule } from './providers/databases/mongodb/mongodb.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+
 import {
   AccessTokenModule,
   HttpErrorsModule,
   LoggingModule,
 } from '@app/common';
+
+import { ConfigsModule } from './configs/configs.module';
+import { NotificationModule } from './notification/notification.module';
 import { NotificationServiceController } from './notification-service.controller';
 import { NotificationServiceService } from './notification-service.service';
-import { NotificationModule } from './notification/notification.module';
+import { MongoDbModule } from './providers/databases/mongodb/mongodb.module';
+import { HealthModule } from './providers/health/health.module';
 
 @Module({
   imports: [
     HealthModule,
-    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
+    ConfigsModule,
     LoggingModule,
     HttpErrorsModule,
     MongoDbModule,
@@ -23,7 +26,7 @@ import { NotificationModule } from './notification/notification.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.getOrThrow<string>('JWT_ACCESS_SECRET'),
+        secret: config.getOrThrow<string>('jwtAccess.secret'),
       }),
     }),
   ],

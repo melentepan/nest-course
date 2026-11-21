@@ -1,10 +1,12 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { Interval } from '@nestjs/schedule';
 import { ClientKafka } from '@nestjs/microservices';
-import { DataSource } from 'typeorm';
+import { Interval } from '@nestjs/schedule';
 import { firstValueFrom, timeout } from 'rxjs';
+
 import { ShutdownService, TRANSFER_COMPLETED_EVENT } from '@app/common';
+
 import type { OutboxRow } from './interfaces/outboxRow.interface';
+import { OutboxRepository } from './outbox.repository';
 
 export const OUTBOX_KAFKA = 'OUTBOX_KAFKA';
 
@@ -14,16 +16,20 @@ export class OutboxPublisher {
   private running?: Promise<void>;
 
   constructor(
-    private readonly dataSource: DataSource,
+    private readonly repository: OutboxRepository,
     private readonly shutdown: ShutdownService,
     @Inject(OUTBOX_KAFKA) private readonly kafka: ClientKafka,
   ) {}
 
   @Interval(5000)
   async publishPending(): Promise<void> {
-    if (this.running) return;
+    if (this.running) {
+      return;
+    }
     const release = this.shutdown.beginWork();
-    if (!release) return;
+    if (!release) {
+      return;
+    }
     this.running = this.publishBatch();
     try {
       await this.running;
@@ -40,46 +46,40 @@ export class OutboxPublisher {
 
   private async publishBatch(): Promise<void> {
     for (let i = 0; i < 100 && !this.shutdown.isDraining; i++) {
-      const found = await this.dataSource.transaction(async (manager) => {
-        const rows: OutboxRow[] =
-          await manager.query(`SELECT id, payload FROM transfer_outbox
-          WHERE published_at IS NULL AND next_attempt_at <= now()
-          ORDER BY next_attempt_at, created_at LIMIT 1 FOR UPDATE SKIP LOCKED`);
-        const row = rows[0];
-        if (!row) return false;
-        try {
-          await firstValueFrom(
-            this.kafka
-              .emit(TRANSFER_COMPLETED_EVENT, {
-                key: String(row.payload.fromUserId),
-                value: row.payload,
-              })
-              .pipe(timeout(15000)),
-          );
-        } catch {
-          await this.kafka.close();
-          await manager.query(
-            `UPDATE transfer_outbox SET attempts = attempts + 1,
-            next_attempt_at = now() + interval '30 seconds' WHERE id = $1`,
-            [row.id],
-          );
-          this.logger.warn({
-            msg: 'Публикация события не удалась, повтор через 30 секунд',
-            eventId: row.id,
-          });
-          return true;
-        }
-        await manager.query(
-          'UPDATE transfer_outbox SET published_at = now() WHERE id = $1',
-          [row.id],
-        );
+      const result = await this.repository.processNext((row) =>
+        this.publish(row),
+      );
+      if (!result) {
+        break;
+      }
+
+      if (result.published) {
         this.logger.log({
           msg: 'Событие опубликовано в Kafka',
-          eventId: row.id,
+          eventId: result.eventId,
         });
-        return true;
-      });
-      if (!found) break;
+      } else {
+        this.logger.warn({
+          msg: 'Публикация события не удалась, повтор через 30 секунд',
+          eventId: result.eventId,
+        });
+      }
+    }
+  }
+
+  private async publish(row: OutboxRow): Promise<void> {
+    try {
+      await firstValueFrom(
+        this.kafka
+          .emit(TRANSFER_COMPLETED_EVENT, {
+            key: String(row.payload.fromUserId),
+            value: row.payload,
+          })
+          .pipe(timeout(15000)),
+      );
+    } catch (error: unknown) {
+      await this.kafka.close();
+      throw error;
     }
   }
 }

@@ -1,10 +1,12 @@
-import { Logger, OnModuleInit } from '@nestjs/common';
-import { ShutdownService } from '@app/common';
 import { InjectQueue, Process, Processor } from '@nestjs/bull';
-import { CLS_ID, ClsService } from 'nestjs-cls';
+import { Logger, OnModuleInit } from '@nestjs/common';
 import type { Job, Queue } from 'bull';
-import type { CleanupResult } from './interfaces/cleanupResult.interface';
+import { CLS_ID, ClsService } from 'nestjs-cls';
+
+import { ShutdownService } from '@app/common';
+
 import { AvatarCleanupService } from './avatarCleanup.service';
+import type { CleanupResult } from './interfaces/cleanupResult.interface';
 
 @Processor('avatar-cleanup')
 export class AvatarCleanupProcessor implements OnModuleInit {
@@ -24,7 +26,9 @@ export class AvatarCleanupProcessor implements OnModuleInit {
   @Process('cleanup')
   async handleCleanup(job: Job): Promise<CleanupResult> {
     const release = this.shutdown.beginWork();
-    if (!release) throw new Error('Приложение останавливается');
+    if (!release) {
+      throw new Error('Приложение останавливается');
+    }
     try {
       return await this.cls.run(async () => {
         this.cls.set(CLS_ID, `avatar-cleanup-job-${job.id}`);

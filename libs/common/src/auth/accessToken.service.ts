@@ -1,9 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+
 import { ACCESS_TOKEN_OPTIONS } from './accessToken.constants';
-import type { AccessTokenOptions } from './interfaces/accessTokenOptions.interface';
-import type { AccessTokenClaims } from './interfaces/accessTokenClaims.interface';
 import { InvalidAccessTokenError } from './errors/invalidAccessToken.error';
+import type { AccessTokenClaims } from './interfaces/accessTokenClaims.interface';
+import type { AccessTokenOptions } from './interfaces/accessTokenOptions.interface';
 
 @Injectable()
 export class AccessTokenService {
@@ -19,10 +20,13 @@ export class AccessTokenService {
   async verify(token: string): Promise<AccessTokenClaims> {
     let payload: unknown;
     try {
-      payload = await this.jwtService.verifyAsync(token, {
-        secret: this.options.secret,
-        algorithms: ['HS256'],
-      });
+      payload = await this.jwtService.verifyAsync<Record<string, unknown>>(
+        token,
+        {
+          secret: this.options.secret,
+          algorithms: ['HS256'],
+        },
+      );
     } catch (error: unknown) {
       if (
         error instanceof Error &&

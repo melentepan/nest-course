@@ -1,18 +1,20 @@
-import type { UploadAvatarResult } from './interfaces/uploadAvatarResult.interface';
+import { randomUUID } from 'node:crypto';
+
 import {
   ConflictException,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+
 import { IFileService } from '../../providers/files/files.adapter';
-import { randomUUID } from 'node:crypto';
-import { UserAvatarsRepository } from './userAvatars.repository';
 import { UserAvatar } from './entities/userAvatar.entity';
 import {
   ActiveAvatarLimitError,
   AvatarUserNotFoundError,
 } from './errors/userAvatar.errors';
+import type { UploadAvatarResult } from './interfaces/uploadAvatarResult.interface';
+import { UserAvatarsRepository } from './userAvatars.repository';
 
 @Injectable()
 export class UserAvatarsService {

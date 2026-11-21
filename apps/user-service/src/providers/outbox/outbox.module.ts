@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { getKafkaBrokers } from '@app/common';
+
 import { OUTBOX_KAFKA, OutboxPublisher } from './outbox.publisher';
+import { OutboxRepository } from './outbox.repository';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { OUTBOX_KAFKA, OutboxPublisher } from './outbox.publisher';
           options: {
             client: {
               clientId: 'user-service',
-              brokers: getKafkaBrokers(config),
+              brokers: config.getOrThrow<string[]>('kafka.brokers'),
               connectionTimeout: 3000,
               requestTimeout: 5000,
               retry: { retries: 2 },
@@ -28,6 +29,6 @@ import { OUTBOX_KAFKA, OutboxPublisher } from './outbox.publisher';
       },
     ]),
   ],
-  providers: [OutboxPublisher],
+  providers: [OutboxPublisher, OutboxRepository],
 })
 export class OutboxModule {}

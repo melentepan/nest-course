@@ -11,7 +11,9 @@ export interface TransferCompletedEvent {
 export function isTransferCompletedEvent(
   value: unknown,
 ): value is TransferCompletedEvent {
-  if (typeof value !== 'object' || value === null) return false;
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
   const event = value as Record<string, unknown>;
   return (
     typeof event.eventId === 'string' &&

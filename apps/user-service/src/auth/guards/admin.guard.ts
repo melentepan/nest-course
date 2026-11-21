@@ -5,8 +5,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { AuthenticatedRequest } from '../../common/interfaces/jwt.interface';
+
 import { UserRole } from '../../common/enums/userRole.enum';
+import { AuthenticatedRequest } from '../../common/interfaces/jwt.interface';
 import { UsersService } from '../../features/users/users.service';
 
 @Injectable()

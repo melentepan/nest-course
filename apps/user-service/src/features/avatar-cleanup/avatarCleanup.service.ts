@@ -1,11 +1,12 @@
-import type { CleanupResult } from './interfaces/cleanupResult.interface';
-import type { EnqueueCleanupResult } from './interfaces/enqueueCleanupResult.interface';
-import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Queue } from 'bull';
-import { UserAvatarsRepository } from '../users/userAvatars.repository';
+
 import { IFileService } from '../../providers/files/files.adapter';
+import { UserAvatarsRepository } from '../users/userAvatars.repository';
+import type { CleanupResult } from './interfaces/cleanupResult.interface';
+import type { EnqueueCleanupResult } from './interfaces/enqueueCleanupResult.interface';
 
 @Injectable()
 export class AvatarCleanupService {

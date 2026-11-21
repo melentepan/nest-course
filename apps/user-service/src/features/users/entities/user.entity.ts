@@ -1,3 +1,4 @@
+import { Exclude } from 'class-transformer';
 import {
   Check,
   Column,
@@ -9,7 +10,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Exclude } from 'class-transformer';
+
 import { UserRole } from '../../../common/enums/userRole.enum';
 import { UserAvatar } from './userAvatar.entity';
 

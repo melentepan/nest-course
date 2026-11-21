@@ -1,4 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+
 import type { TransferCompletedEvent } from '@app/common';
 
 @Schema({ collection: 'transfer_notifications', versionKey: false })

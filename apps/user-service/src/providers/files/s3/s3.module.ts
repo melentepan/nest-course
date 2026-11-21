@@ -1,9 +1,9 @@
 import * as AWS from '@aws-sdk/client-s3';
 import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 import { S3Lib } from './constants/doSpacesServiceLib.constant';
 import { S3Service } from './s3.service';
-import { ConfigService } from '@nestjs/config';
 
 @Module({
   providers: [

@@ -1,4 +1,3 @@
-import type { EnqueueCleanupResult } from './interfaces/enqueueCleanupResult.interface';
 import {
   Controller,
   HttpCode,
@@ -14,9 +13,11 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { AvatarCleanupService } from './avatarCleanup.service';
-import { AuthGuard } from '../../auth/guards/auth.guard';
+
 import { AdminGuard } from '../../auth/guards/admin.guard';
+import { AuthGuard } from '../../auth/guards/auth.guard';
+import { AvatarCleanupService } from './avatarCleanup.service';
+import type { EnqueueCleanupResult } from './interfaces/enqueueCleanupResult.interface';
 
 @ApiTags('Чистка аватарок')
 @ApiBearerAuth('JWT-auth')

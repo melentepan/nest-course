@@ -1,4 +1,6 @@
-import type { LogoutResponseDto } from '../../auth/dto/logoutResponse.dto';
+import { randomUUID } from 'node:crypto';
+
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import {
   BadRequestException,
   ConflictException,
@@ -8,22 +10,21 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateUserDto } from './dto/createUser.dto';
-import { UpdateUserDto } from './dto/updateUser.dto';
 import * as bcrypt from 'bcrypt';
-import { randomUUID } from 'node:crypto';
-import { PaginationQueryDto } from './dto/paginationQuery.dto';
-import { UsersRepository } from './users.repository';
-import { UserUniqueConflictError } from './errors/user.errors';
-import { UserRole } from '../../common/enums/userRole.enum';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { UserResponseDto } from './dto/userResponse.dto';
 import type { Cache } from 'cache-manager';
-import { User } from './entities/user.entity';
 
+import type { LogoutResponseDto } from '../../auth/dto/logoutResponse.dto';
+import { UserRole } from '../../common/enums/userRole.enum';
+import { CreateUserDto } from './dto/createUser.dto';
+import { PaginatedUsersResponseDto } from './dto/paginatedUsersResponse.dto';
+import { PaginationQueryDto } from './dto/paginationQuery.dto';
+import { UpdateUserDto } from './dto/updateUser.dto';
+import { UserResponseDto } from './dto/userResponse.dto';
+import { User } from './entities/user.entity';
+import { UserUniqueConflictError } from './errors/user.errors';
 import type { CachedUserProfile } from './interfaces/cachedUserProfile.interface';
 import { CachedUsersPage } from './interfaces/cachedUsersPage.interface';
-import { PaginatedUsersResponseDto } from './dto/paginatedUsersResponse.dto';
+import { UsersRepository } from './users.repository';
 
 @Injectable()
 export class UsersService {

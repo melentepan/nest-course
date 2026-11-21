@@ -1,9 +1,11 @@
-import { getKafkaBrokers, setupShutdown, ShutdownService } from '@app/common';
 import { ConfigService } from '@nestjs/config';
+import { NestFactory } from '@nestjs/core';
 import type { KafkaOptions } from '@nestjs/microservices';
 import { Transport } from '@nestjs/microservices';
-import { NestFactory } from '@nestjs/core';
 import { Logger } from 'nestjs-pino';
+
+import { setupShutdown, ShutdownService } from '@app/common';
+
 import { NotificationServiceModule } from './notification-service.module';
 
 async function bootstrap() {
@@ -18,7 +20,7 @@ async function bootstrap() {
     options: {
       client: {
         clientId: 'notification-service',
-        brokers: getKafkaBrokers(config),
+        brokers: config.getOrThrow<string[]>('kafka.brokers'),
       },
       consumer: {
         groupId: 'transfer-notifications-v1',
@@ -30,7 +32,7 @@ async function bootstrap() {
   });
   await app.init();
   await app.startAllMicroservices();
-  await app.listen(process.env.NOTIFICATION_SERVICE_PORT ?? 3001);
+  await app.listen(config.getOrThrow<number>('app.port'));
   app.get(ShutdownService).markStarted();
 }
 void bootstrap();

@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import {
   IsEmail,
   IsInt,
@@ -7,7 +8,7 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+
 import { ToLowerCase } from '../../../common/decorators/toLowerCase.decorator';
 import { Trim } from '../../../common/decorators/trim.decorator';
 

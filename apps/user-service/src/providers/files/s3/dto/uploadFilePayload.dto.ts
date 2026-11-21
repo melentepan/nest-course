@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString } from 'class-validator';
+
 import type { IUploadedMulterFile } from '../interfaces/uploadFile.interface';
 
 export class UploadFilePayloadDto {

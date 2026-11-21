@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import {
   ArgumentsHost,
   Catch,
@@ -7,9 +9,9 @@ import {
   Injectable,
   Logger,
 } from '@nestjs/common';
-import { ClsService } from 'nestjs-cls';
-import { randomUUID } from 'node:crypto';
 import type { Request, Response } from 'express';
+import { ClsService } from 'nestjs-cls';
+
 import type { HttpErrorResponse } from './httpErrorResponse.interface';
 
 @Injectable()

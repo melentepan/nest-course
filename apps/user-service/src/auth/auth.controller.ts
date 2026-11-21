@@ -6,13 +6,6 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { LoginDto } from './dto/login.dto';
-import { RegisterDto } from './dto/register.dto';
-import { RefreshTokenDto } from './dto/refreshToken.dto';
-import { CurrentUser } from '../common/decorators/currentUser.decorator';
-import { UsersService } from '../features/users/users.service';
-import { AuthGuard } from './guards/auth.guard';
 import {
   ApiBearerAuth,
   ApiConflictResponse,
@@ -22,9 +15,17 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+
+import { CurrentUser } from '../common/decorators/currentUser.decorator';
+import { UsersService } from '../features/users/users.service';
+import { AuthService } from './auth.service';
 import { AuthTokensDto } from './dto/authTokens.dto';
+import { LoginDto } from './dto/login.dto';
 import { LogoutResponseDto } from './dto/logoutResponse.dto';
+import { RefreshTokenDto } from './dto/refreshToken.dto';
+import { RegisterDto } from './dto/register.dto';
 import { RegisterConflictResponseDto } from './dto/registerConflictResponse.dto';
+import { AuthGuard } from './guards/auth.guard';
 
 @ApiTags('Authentication')
 @Controller('auth')

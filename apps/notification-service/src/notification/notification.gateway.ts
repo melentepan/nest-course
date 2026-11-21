@@ -1,10 +1,4 @@
-import { MetricsService } from '../providers/metrics/metrics.service';
 import { Logger } from '@nestjs/common';
-import {
-  AccessTokenService,
-  InvalidAccessTokenError,
-  ShutdownService,
-} from '@app/common';
 import {
   MessageBody,
   OnGatewayConnection,
@@ -14,6 +8,14 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
+
+import {
+  AccessTokenService,
+  InvalidAccessTokenError,
+  ShutdownService,
+} from '@app/common';
+
+import { MetricsService } from '../providers/metrics/metrics.service';
 import type {
   HelloAcknowledgement,
   NotificationPayload,
@@ -58,8 +60,9 @@ export class NotificationGateway
 
   @SubscribeMessage('hello')
   handleHello(@MessageBody() payload: unknown): HelloAcknowledgement {
-    if (this.shutdown.isDraining)
+    if (this.shutdown.isDraining) {
       return { ok: false, error: 'Приложение останавливается' };
+    }
     if (
       typeof payload !== 'object' ||
       payload === null ||
@@ -110,32 +113,22 @@ export class NotificationGateway
   }
 
   sendNotification(userId: number, payload: NotificationPayload): void {
-    const members = this.server.sockets.adapter.rooms.get(
-      this.getUserRoom(userId),
-    );
-    if (!members) return;
-
-    for (const id of members) {
-      const client = this.server.sockets.sockets.get(id);
-      if (!client) continue;
-      if (!client.conn.transport.writable) {
-        this.logger.warn(`Медленный клиент отключён: ${client.id}`);
-        client.disconnect(true);
-        continue;
-      }
-      client.volatile.emit('notification', payload);
-    }
+    this.server.to(this.getUserRoom(userId)).emit('notification', payload);
   }
 
   private async authenticate(client: NotificationSocket): Promise<void> {
-    if (this.shutdown.isDraining) throw new Error('Приложение останавливается');
+    if (this.shutdown.isDraining) {
+      throw new Error('Приложение останавливается');
+    }
     const token: unknown = client.handshake.auth.token;
     if (typeof token !== 'string' || token.trim().length === 0) {
       throw new InvalidAccessTokenError('Access-токен не передан');
     }
 
     const claims = await this.accessTokenService.verify(token);
-    if (this.shutdown.isDraining) throw new Error('Приложение останавливается');
+    if (this.shutdown.isDraining) {
+      throw new Error('Приложение останавливается');
+    }
     client.data.userId = claims.sub;
   }
 

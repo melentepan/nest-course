@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DatabaseError } from 'pg';
 import { Brackets, QueryFailedError, Repository } from 'typeorm';
+
 import { CreateUserDto } from './dto/createUser.dto';
 import { PaginationQueryDto } from './dto/paginationQuery.dto';
 import { User } from './entities/user.entity';

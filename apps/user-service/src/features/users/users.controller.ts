@@ -1,6 +1,3 @@
-import type { User } from './entities/user.entity';
-import type { TransferResult } from './interfaces/transferResult.interface';
-import type { ResetBalancesResult } from './interfaces/resetBalancesResult.interface';
 import {
   Body,
   Controller,
@@ -15,14 +12,6 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
-// import { CreateUserDto } from './dto/createUser.dto';
-import { UpdateUserDto } from './dto/updateUser.dto';
-import { ParseIdPipe } from '../../common/pipes/parseId.pipe';
-import { CurrentUser } from '../../common/decorators/currentUser.decorator';
-import { AuthGuard } from '../../auth/guards/auth.guard';
-import { AdminGuard } from '../../auth/guards/admin.guard';
-import { PaginationQueryDto } from './dto/paginationQuery.dto';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -37,10 +26,22 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { UserResponseDto } from './dto/userResponse.dto';
-import { PaginatedUsersResponseDto } from './dto/paginatedUsersResponse.dto';
+
+import { AdminGuard } from '../../auth/guards/admin.guard';
+import { AuthGuard } from '../../auth/guards/auth.guard';
+import { CurrentUser } from '../../common/decorators/currentUser.decorator';
+import { ParseIdPipe } from '../../common/pipes/parseId.pipe';
 import { BalanceService } from './balance.service';
+import { PaginatedUsersResponseDto } from './dto/paginatedUsersResponse.dto';
+import { PaginationQueryDto } from './dto/paginationQuery.dto';
 import { TransferMoneyDto } from './dto/transferMoney.dto';
+// import { CreateUserDto } from './dto/createUser.dto';
+import { UpdateUserDto } from './dto/updateUser.dto';
+import { UserResponseDto } from './dto/userResponse.dto';
+import type { User } from './entities/user.entity';
+import type { ResetBalancesResult } from './interfaces/resetBalancesResult.interface';
+import type { TransferResult } from './interfaces/transferResult.interface';
+import { UsersService } from './users.service';
 
 @ApiTags('Users')
 @ApiBearerAuth('JWT-auth')
